@@ -1,0 +1,26 @@
+{
+  "version": "0.15.0",
+  "releaseDate": "2024-01-01",
+  "platforms": {
+    "darwin-arm64": {
+      "url": "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.15.0/tectonic-0.15.0-aarch64-apple-darwin.tar.gz",
+      "sha256": "PLACEHOLDER_CHECKSUM_DARWIN_ARM64",
+      "binary": "tectonic"
+    },
+    "darwin-x64": {
+      "url": "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.15.0/tectonic-0.15.0-x86_64-apple-darwin.tar.gz",
+      "sha256": "PLACEHOLDER_CHECKSUM_DARWIN_X64",
+      "binary": "tectonic"
+    },
+    "windows-x64": {
+      "url": "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.15.0/tectonic-0.15.0-x86_64-pc-windows-msvc.zip",
+      "sha256": "PLACEHOLDER_CHECKSUM_WINDOWS_X64",
+      "binary": "tectonic.exe"
+    },
+    "linux-x64": {
+      "url": "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.15.0/tectonic-0.15.0-x86_64-unknown-linux-musl.tar.gz",
+      "sha256": "PLACEHOLDER_CHECKSUM_LINUX_X64",
+      "binary": "tectonic"
+    }
+  }
+}

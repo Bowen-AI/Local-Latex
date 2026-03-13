@@ -1,0 +1,139 @@
+{
+  "name": "latex-one-click",
+  "displayName": "LaTeX One-Click",
+  "description": "Compile LaTeX to PDF locally with no separate TeX installation",
+  "version": "0.1.0",
+  "publisher": "latex-one-click",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Bowen-AI/Local-Latex"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "type": "commonjs",
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:latex",
+    "workspaceContains:**/*.tex"
+  ],
+  "main": "./out/extension.js",
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "package": "vsce package --no-dependencies",
+    "vscode:prepublish": "npm run compile"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "latexOneClick.compile",
+        "title": "LaTeX: Compile Document"
+      },
+      {
+        "command": "latexOneClick.openPdf",
+        "title": "LaTeX: Open PDF"
+      },
+      {
+        "command": "latexOneClick.clean",
+        "title": "LaTeX: Clean Build Artifacts"
+      },
+      {
+        "command": "latexOneClick.selectRoot",
+        "title": "LaTeX: Select Root File"
+      },
+      {
+        "command": "latexOneClick.doctor",
+        "title": "LaTeX: Doctor (Show Extension Health)"
+      }
+    ],
+    "configuration": {
+      "title": "LaTeX One-Click",
+      "properties": {
+        "latexOneClick.autoCompileOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically compile on save"
+        },
+        "latexOneClick.compileDebounceMs": {
+          "type": "number",
+          "default": 1000,
+          "description": "Debounce delay for auto-compile in ms"
+        },
+        "latexOneClick.mainFile": {
+          "type": "string",
+          "default": "",
+          "description": "Main LaTeX file to compile"
+        },
+        "latexOneClick.outputDirectory": {
+          "type": "string",
+          "default": "out",
+          "description": "Output directory for compiled files"
+        },
+        "latexOneClick.runtimeChannel": {
+          "type": "string",
+          "enum": [
+            "stable",
+            "pinned",
+            "custom"
+          ],
+          "default": "stable",
+          "description": "Tectonic runtime channel"
+        },
+        "latexOneClick.offlineOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use only cached packages (no network)"
+        },
+        "latexOneClick.compileTimeoutSec": {
+          "type": "number",
+          "default": 60,
+          "description": "Compile timeout in seconds"
+        },
+        "latexOneClick.telemetry.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable telemetry"
+        },
+        "latexOneClick.preview.autoOpen": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto-open PDF after compile"
+        },
+        "latexOneClick.preview.preserveFocus": {
+          "type": "boolean",
+          "default": true,
+          "description": "Preserve editor focus when opening PDF"
+        },
+        "latexOneClick.logs.verbosity": {
+          "type": "string",
+          "enum": [
+            "normal",
+            "verbose",
+            "debug"
+          ],
+          "default": "normal",
+          "description": "Log verbosity"
+        }
+      }
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "@vscode/vsce": "^3.7.1",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  }
+}
