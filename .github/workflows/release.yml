@@ -17,7 +17,7 @@ jobs:
       - run: npm ci
       - run: npm run compile
       - name: Package VSIX
-        run: npx vsce package --no-dependencies
+        run: npm run package
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
