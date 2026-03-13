@@ -1,0 +1,17 @@
+.vscode/**
+node_modules/**
+src/**
+tsconfig.json
+eslint.config.mjs
+prettier.config.cjs
+vitest.config.ts
+scripts/**
+docs/**
+.github/**
+.gitignore
+CHANGELOG.md
+coverage/**
+*.test.ts
+!out/**
+!package.json
+!resources/**
