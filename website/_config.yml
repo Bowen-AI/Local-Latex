@@ -1,0 +1,11 @@
+title: LaTeX One-Click
+description: Compile LaTeX to PDF in VS Code with bundled Tectonic.
+url: "https://bowenislandsong.github.io"
+baseurl: "/Local-Latex"
+lang: en_US
+theme: minima
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-sitemap
+markdown: kramdown
