@@ -1,77 +1,98 @@
 ---
 layout: home
 title: LaTeX One-Click | Local LaTeX build in VS Code
-description: One-click LaTeX compile in VS Code with a bundled Tectonic runtime, PDF preview, diagnostics, and multi-file project support.
+description: A production-ready LaTeX workflow for VS Code with one-click compile, bundled Tectonic runtime, diagnostics, PDF preview, and collaboration-friendly docs.
 ---
 
-## Compile LaTeX to PDF with one click
+<div class="hero">
+  <p class="eyebrow">VS Code Extension · Open Source</p>
+  <h1>LaTeX One-Click</h1>
+  <p class="hero-copy">Compile LaTeX locally in VS Code with a bundled runtime, clear diagnostics, and fast PDF preview. No TeX Live setup. No fragile onboarding.</p>
+  <div class="hero-actions">
+    <a class="btn btn-primary" href="https://github.com/Bowen-AI/Local-Latex">Repository</a>
+    <a class="btn" href="https://github.com/Bowen-AI/Local-Latex/issues">Open an Issue</a>
+    <a class="btn" href="https://github.com/Bowen-AI/Local-Latex/pulls">Contribute a PR</a>
+  </div>
+</div>
 
-LaTeX One-Click is a VS Code extension that bundles the Tectonic engine so you can compile `.tex` files without installing TeX Live or MiKTeX.
+<div class="notice">
+  <strong>Collaboration welcome:</strong> if you hit bugs, edge cases, or UX pain points, please open an issue with logs and sample `.tex` files so we can reproduce quickly.
+</div>
 
-> Short answer: **yes** — a project website can improve SEO if it has useful content, clear metadata, and internal/external links. This page is structured for that.
+## Why this extension exists
 
-### Personal profile
+Most LaTeX setups fail on onboarding: inconsistent environments, missing toolchains, and difficult error tracing. LaTeX One-Click keeps the workflow inside VS Code so contributors can clone, compile, and iterate immediately.
 
-- Learn more about the maintainer: [Bowen profile](https://bowenislandsong.github.io/#/personal)
+## Core product capabilities
 
-### Feature highlights
+<div class="grid two-up">
+  <div class="card">
+    <h3>Zero-setup compile</h3>
+    <p>Run <code>LaTeX: Compile Document</code> directly from VS Code. The extension handles runtime provisioning.</p>
+  </div>
+  <div class="card">
+    <h3>Inline diagnostics</h3>
+    <p>Compiler output is parsed into actionable Problems panel entries with source mapping.</p>
+  </div>
+  <div class="card">
+    <h3>PDF preview workflow</h3>
+    <p>Open generated PDF immediately after successful compile to shorten edit/verify loops.</p>
+  </div>
+  <div class="card">
+    <h3>Project-scale support</h3>
+    <p>Use root-file selection and <code>% !TEX root</code> directives for multi-file documents.</p>
+  </div>
+</div>
 
-- One-click compilation from the status bar
-- Bundled runtime (no external TeX install required)
-- PDF preview after successful build
-- SyncTeX output for source mapping workflows
-- Diagnostics in the VS Code Problems panel
-- Multi-file root file support
+## Product preview
 
-## GUI walkthrough (with picture views)
+![Status bar compile action](./assets/gui-status-bar.svg)
 
-### 1) Status bar compile action
+![Command palette compile flow](./assets/gui-command-palette.svg)
 
-![Status bar compile button](./assets/gui-status-bar.svg)
+![Side-by-side editor and PDF preview](./assets/gui-pdf-preview.svg)
 
-### 2) Command palette flow
+## Get started in 60 seconds
 
-![Command palette compile command](./assets/gui-command-palette.svg)
+1. Install dependencies and compile the extension:
+   ```bash
+   npm ci
+   npm run compile
+   ```
+2. Open the workspace in VS Code.
+3. Run `LaTeX: Compile Document`.
+4. Test with this minimal file:
+   ```latex
+   \documentclass{article}
+   \begin{document}
+   Hello, LaTeX One-Click!
+   \end{document}
+   ```
 
-### 3) Side-by-side PDF preview
+## Collaboration & contribution
 
-![Editor with PDF preview](./assets/gui-pdf-preview.svg)
+We actively welcome contributions from users and maintainers.
 
-## Usage examples
+- Report bugs or request features: [GitHub Issues](https://github.com/Bowen-AI/Local-Latex/issues)
+- Propose fixes or improvements: [Pull Requests](https://github.com/Bowen-AI/Local-Latex/pulls)
+- Before opening a PR, run:
 
-### Example 1: Minimal document
-
-```latex
-\documentclass{article}
-\begin{document}
-Hello from LaTeX One-Click!
-\end{document}
+```bash
+npm run smoke
+npm test
 ```
 
-Compile with **LaTeX: Compile Document** and view the generated PDF in VS Code.
+For high-quality bug reports, include your OS, VS Code version, extension version, and a minimal reproducible `.tex` example.
 
-### Example 2: Multi-file project root
+## Technical docs
 
-In `chapters/ch1.tex`:
-
-```latex
-% !TEX root = ../main.tex
-\chapter{Introduction}
-```
-
-The extension compiles `main.tex` while editing chapter files.
-
-## How to maximize SEO for this project site
-
-1. Keep this page updated with practical examples and screenshots.
-2. Publish release notes and changelog links on each release.
-3. Add backlinks from README, marketplace pages, and social profiles.
-4. Use descriptive headings (`H2/H3`) and keyword-rich alt text for images.
-5. Keep load time fast (lightweight images, static pages, clean markup).
-
-## Documentation
-
-- [README](../README.md)
 - [Architecture](../docs/architecture.md)
+- [Compatibility](../docs/compatibility.md)
+- [Security](../docs/security.md)
 - [Troubleshooting](../docs/troubleshooting.md)
 - [Release Process](../docs/release.md)
+
+## Project links
+
+- Repository: [github.com/Bowen-AI/Local-Latex](https://github.com/Bowen-AI/Local-Latex)
+- Maintainer profile: [bowenislandsong.github.io/#/personal](https://bowenislandsong.github.io/#/personal)
