@@ -27,7 +27,14 @@
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "smoke": "npm run compile && node ./scripts/smoke-test.js",
+    "test:local": "bash ./scripts/local-testbed.sh",
     "package": "vsce package --no-dependencies",
+    "package:vsix": "npm run compile && npm run test && npm run lint && vsce package --no-dependencies",
+    "publish:vscode": "npm run package:vsix && vsce publish --no-dependencies",
+    "publish:openvsx": "npm run package:vsix && npx @open-vsx/ovsx publish",
+    "publish:all": "npm run publish:vscode && npm run publish:openvsx",
+    "release:marketplaces": "bash ./scripts/publish-extension.sh",
     "vscode:prepublish": "npm run compile"
   },
   "contributes": {
@@ -110,6 +117,11 @@
           "type": "boolean",
           "default": true,
           "description": "Preserve editor focus when opening PDF"
+        },
+        "latexOneClick.syncTeX": {
+          "type": "boolean",
+          "default": true,
+          "description": "Emit SyncTeX data during compile for source/PDF synchronization"
         },
         "latexOneClick.logs.verbosity": {
           "type": "string",

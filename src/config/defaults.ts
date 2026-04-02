@@ -9,5 +9,6 @@ export const DEFAULTS = {
   telemetryEnabled: false,
   previewAutoOpen: true,
   previewPreserveFocus: true,
+  syncTeX: true,
   logsVerbosity: 'normal' as const,
 };

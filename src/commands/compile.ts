@@ -87,6 +87,7 @@ export async function compileCommand(storagePath: string, statusBar: vscode.Stat
         workspaceRoot: root,
         timeoutMs: settings.compileTimeoutSec * 1000,
         offlineOnly: settings.offlineOnly,
+        synctex: settings.syncTeX,
         signal: abortController.signal,
         onOutput: log,
       });

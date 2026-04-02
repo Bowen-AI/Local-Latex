@@ -41,6 +41,7 @@ export async function compileAllCommand(storagePath: string): Promise<void> {
           workspaceRoot: root,
           timeoutMs: settings.compileTimeoutSec * 1000,
           offlineOnly: settings.offlineOnly,
+          synctex: settings.syncTeX,
           onOutput: log,
         });
         if (result.success) success++; else failed++;
