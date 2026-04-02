@@ -153,9 +153,3 @@ Quick checks only:
 npm run smoke
 npm test
 ```
-
----
-
-## 📄 License
-
-MIT — see [LICENSE](LICENSE).
