@@ -15,6 +15,7 @@ export interface ExtensionSettings {
   telemetryEnabled: boolean;
   previewAutoOpen: boolean;
   previewPreserveFocus: boolean;
+  syncTeX: boolean;
   logsVerbosity: LogVerbosity;
 }
 
@@ -31,6 +32,7 @@ export function getSettings(scope?: vscode.Uri): ExtensionSettings {
     telemetryEnabled: cfg.get<boolean>('telemetry.enabled', DEFAULTS.telemetryEnabled),
     previewAutoOpen: cfg.get<boolean>('preview.autoOpen', DEFAULTS.previewAutoOpen),
     previewPreserveFocus: cfg.get<boolean>('preview.preserveFocus', DEFAULTS.previewPreserveFocus),
+    syncTeX: cfg.get<boolean>('syncTeX', DEFAULTS.syncTeX),
     logsVerbosity: cfg.get<LogVerbosity>('logs.verbosity', DEFAULTS.logsVerbosity),
   };
 }

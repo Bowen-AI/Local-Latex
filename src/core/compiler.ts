@@ -9,6 +9,7 @@ export interface CompileOptions {
   workspaceRoot: string;
   timeoutMs: number;
   offlineOnly: boolean;
+  synctex: boolean;
   signal?: AbortSignal;
   onOutput?: (data: string) => void;
 }
@@ -23,6 +24,18 @@ export interface CompileResult {
   timedOut: boolean;
 }
 
+export function buildCompileArgs(options: Pick<CompileOptions, 'outputDirectory' | 'offlineOnly' | 'mainFile' | 'synctex'>): string[] {
+  const args = ['compile', '--outdir', options.outputDirectory];
+  if (options.synctex) {
+    args.push('--synctex');
+  }
+  if (options.offlineOnly) {
+    args.push('--only-cached');
+  }
+  args.push(options.mainFile);
+  return args;
+}
+
 export async function compile(options: CompileOptions): Promise<CompileResult> {
   const {
     binaryPath,
@@ -35,11 +48,12 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
     onOutput,
   } = options;
 
-  const args = ['compile', '--outdir', outputDirectory];
-  if (offlineOnly) {
-    args.push('--only-cached');
-  }
-  args.push(mainFile);
+  const args = buildCompileArgs({
+    outputDirectory,
+    offlineOnly,
+    mainFile,
+    synctex: options.synctex,
+  });
 
   const start = Date.now();
 
