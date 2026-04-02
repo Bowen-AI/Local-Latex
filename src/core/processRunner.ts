@@ -1,4 +1,5 @@
 import { spawn } from 'child_process';
+import * as path from 'path';
 
 export interface ProcessOptions {
   command: string;
@@ -20,12 +21,18 @@ export interface ProcessResult {
 export async function runProcess(options: ProcessOptions): Promise<ProcessResult> {
   const { command, args, cwd, timeoutMs, signal, onStdout, onStderr } = options;
 
+  // Normalize and validate: only allow absolute paths to prevent path traversal.
+  const resolvedCommand = path.resolve(command);
+  if (!path.isAbsolute(resolvedCommand)) {
+    return { exitCode: 1, stdout: '', stderr: `Invalid command path: ${command}`, timedOut: false };
+  }
+
   return new Promise((resolve) => {
     const stdout: string[] = [];
     const stderr: string[] = [];
     let timedOut = false;
 
-    const proc = spawn(command, args, { cwd, shell: false });
+    const proc = spawn(resolvedCommand, args, { cwd, shell: false });
 
     const timer = setTimeout(() => {
       timedOut = true;
