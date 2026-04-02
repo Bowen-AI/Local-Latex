@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="420" viewBox="0 0 1100 420" role="img" aria-label="VS Code command palette with LaTeX compile command">
+  <rect width="1100" height="420" fill="#1e1e1e"/>
+  <rect x="150" y="60" width="800" height="300" rx="10" fill="#252526" stroke="#3e3e42"/>
+  <rect x="180" y="95" width="740" height="52" rx="8" fill="#3c3c3c"/>
+  <text x="205" y="128" fill="#cccccc" font-family="Segoe UI, Arial" font-size="24">&gt; LaTeX: Compile Document</text>
+  <rect x="180" y="165" width="740" height="56" rx="6" fill="#094771"/>
+  <text x="205" y="200" fill="#ffffff" font-family="Segoe UI, Arial" font-size="22">LaTeX: Compile Document</text>
+  <text x="205" y="240" fill="#9cdcfe" font-family="Segoe UI, Arial" font-size="18">Compile current root file with bundled Tectonic</text>
+  <rect x="180" y="262" width="740" height="56" rx="6" fill="#2d2d30"/>
+  <text x="205" y="296" fill="#d4d4d4" font-family="Segoe UI, Arial" font-size="22">LaTeX: Clean Build Artifacts</text>
+</svg>
