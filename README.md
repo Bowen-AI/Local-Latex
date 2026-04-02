@@ -21,6 +21,19 @@ LaTeX One-Click bundles the [Tectonic](https://tectonic-typesetting.github.io/) 
 
 ---
 
+
+## 🌐 Project Website (GitHub Pages + Jekyll)
+
+This repository includes a GitHub Actions workflow that builds and deploys a Jekyll site from `website/` to GitHub Pages on every push to `main`.
+
+- Workflow: `.github/workflows/pages.yml`
+- Site source: `website/`
+- Builder action: `actions/jekyll-build-pages@v1` (GitHub Pages dependencies preinstalled)
+
+After enabling **Settings → Pages → Build and deployment → GitHub Actions**, pushes to `main` automatically publish the site.
+
+---
+
 ## 🚀 Quick Start
 
 1. Install the extension

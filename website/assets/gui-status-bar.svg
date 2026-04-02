@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="420" viewBox="0 0 1100 420" role="img" aria-label="VS Code status bar showing LaTeX compile button">
+  <rect width="1100" height="420" fill="#1e1e1e"/>
+  <rect x="0" y="0" width="1100" height="372" fill="#252526"/>
+  <rect x="0" y="372" width="1100" height="48" fill="#007acc"/>
+  <text x="28" y="403" fill="#ffffff" font-family="Segoe UI, Arial" font-size="20">$(file-pdf) LaTeX</text>
+  <text x="910" y="403" fill="#cfe8ff" font-family="Segoe UI, Arial" font-size="18">UTF-8   Ln 18</text>
+  <rect x="90" y="90" width="920" height="220" rx="8" fill="#1f1f1f" stroke="#3e3e42"/>
+  <text x="120" y="140" fill="#d4d4d4" font-family="Consolas, monospace" font-size="24">main.tex</text>
+  <text x="120" y="185" fill="#9cdcfe" font-family="Consolas, monospace" font-size="21">\documentclass</text>
+  <text x="306" y="185" fill="#d4d4d4" font-family="Consolas, monospace" font-size="21">{article}</text>
+  <text x="120" y="220" fill="#ce9178" font-family="Consolas, monospace" font-size="21">Hello, World!</text>
+  <text x="120" y="255" fill="#9cdcfe" font-family="Consolas, monospace" font-size="21">\end</text>
+  <text x="174" y="255" fill="#d4d4d4" font-family="Consolas, monospace" font-size="21">{document}</text>
+</svg>
