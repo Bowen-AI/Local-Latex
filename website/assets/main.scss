@@ -23,7 +23,7 @@ body {
 .site-header {
   border-top: 0;
   border-bottom: 1px solid var(--line);
-  background: rgb(255 255 255 / 92%);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(12px);
 }
 
@@ -51,15 +51,16 @@ body {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgb(13 18 26 / 90%) 0%, rgb(13 18 26 / 72%) 42%, rgb(13 18 26 / 34%) 100%),
-    linear-gradient(180deg, rgb(0 0 0 / 14%) 0%, rgb(0 0 0 / 52%) 100%);
+    linear-gradient(90deg, rgba(13, 18, 26, 0.9) 0%, rgba(13, 18, 26, 0.72) 42%, rgba(13, 18, 26, 0.34) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.14) 0%, rgba(0, 0, 0, 0.52) 100%);
 }
 
 .hero-content {
   position: relative;
   z-index: 1;
-  width: min(680px, calc(100% - 40px));
-  margin-left: max(24px, calc((100vw - 1120px) / 2));
+  width: calc(100% - 40px);
+  max-width: 680px;
+  margin-left: 24px;
   padding: 84px 0 104px;
   color: #fff;
 }
@@ -86,7 +87,7 @@ body {
 .hero-copy {
   max-width: 620px;
   margin: 24px 0 0;
-  color: rgb(255 255 255 / 88%);
+  color: rgba(255, 255, 255, 0.88);
   font-size: clamp(1.1rem, 2vw, 1.42rem);
   line-height: 1.45;
 }
@@ -103,7 +104,7 @@ body {
   align-items: center;
   min-height: 42px;
   padding: 0 18px;
-  border: 1px solid rgb(255 255 255 / 36%);
+  border: 1px solid rgba(255, 255, 255, 0.36);
   border-radius: 6px;
   color: #fff;
   font-weight: 750;
@@ -113,7 +114,7 @@ body {
 .btn:hover {
   color: #fff;
   text-decoration: none;
-  border-color: rgb(255 255 255 / 68%);
+  border-color: rgba(255, 255, 255, 0.68);
 }
 
 .btn-primary {
@@ -128,30 +129,31 @@ body {
 }
 
 .btn-ghost {
-  background: rgb(255 255 255 / 12%);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .hero-panel {
   position: absolute;
-  left: max(24px, calc((100vw - 1120px) / 2));
+  left: 24px;
   bottom: 22px;
   z-index: 1;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  color: rgb(255 255 255 / 88%);
+  color: rgba(255, 255, 255, 0.88);
 }
 
 .hero-panel span {
   padding: 6px 10px;
-  border: 1px solid rgb(255 255 255 / 28%);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 999px;
-  background: rgb(0 0 0 / 24%);
+  background: rgba(0, 0, 0, 0.24);
   font-size: 0.85rem;
 }
 
 .section {
-  width: min(1120px, calc(100% - 40px));
+  width: calc(100% - 40px);
+  max-width: 1120px;
   margin: 0 auto;
   padding: 56px 0;
 }
@@ -196,7 +198,7 @@ body {
   border-radius: 8px;
   overflow: hidden;
   background: var(--surface);
-  box-shadow: 0 20px 60px rgb(20 30 43 / 14%);
+  box-shadow: 0 20px 60px rgba(20, 30, 43, 0.14);
 }
 
 .demo-frame img {
@@ -324,6 +326,16 @@ code {
   border-radius: 4px;
 }
 
+@media (min-width: 1168px) {
+  .hero-content {
+    margin-left: calc((100vw - 1120px) / 2);
+  }
+
+  .hero-panel {
+    left: calc((100vw - 1120px) / 2);
+  }
+}
+
 @media (max-width: 920px) {
   .intro-band,
   .quickstart {
@@ -343,7 +355,8 @@ code {
   }
 
   .hero-content {
-    width: min(100% - 32px, 640px);
+    width: calc(100% - 32px);
+    max-width: 640px;
     margin-left: 16px;
     padding-top: 72px;
   }
@@ -354,7 +367,8 @@ code {
   }
 
   .section {
-    width: min(100% - 32px, 1120px);
+    width: calc(100% - 32px);
+    max-width: 1120px;
     padding: 42px 0;
   }
 
