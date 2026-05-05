@@ -4,6 +4,14 @@ title: LaTeX One-Click | Interactive LaTeX preview in VS Code
 description: A VS Code extension for local LaTeX builds with bundled Tectonic, diagnostics, interactive PDF preview, and SyncTeX click-to-source navigation.
 ---
 
+<style>
+  .site-header,
+  .site-footer,
+  .home > .page-heading {
+    display: none;
+  }
+</style>
+
 <section class="hero">
   <div class="hero-shade"></div>
   <div class="hero-content">
