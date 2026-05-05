@@ -11,7 +11,7 @@ LaTeX One-Click bundles the [Tectonic](https://tectonic-typesetting.github.io/) 
 - **One-click compilation** — press the status bar button or run `LaTeX: Compile Document`
 - **Zero configuration** — works out of the box for single-file documents
 - **Bundled Tectonic engine** — no external TeX installation needed
-- **PDF preview** — auto-opens the PDF after a successful build
+- **PDF preview** — auto-opens the PDF after a successful build and restores your last page/position on rebuild
 - **SyncTeX output** — emits source mapping metadata for editor/PDF synchronization workflows
 - **Error diagnostics** — errors and warnings appear in the Problems panel
 - **Auto-compile on save** — optional, with configurable debounce

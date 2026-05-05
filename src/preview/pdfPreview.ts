@@ -1,15 +1,15 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { setCurrentPdf } from './previewState';
+import { getCurrentPdf, setCurrentPdf } from './previewState';
 
 export async function openPdf(
   pdfPath: string,
   workspaceFolder: string,
   preserveFocus = true
 ): Promise<void> {
-  setCurrentPdf(workspaceFolder, pdfPath);
-
-  const uri = vscode.Uri.file(pdfPath);
+  const current = getCurrentPdf(workspaceFolder);
+  const uri = buildPdfOpenUri(pdfPath, current);
+  setCurrentPdf(workspaceFolder, uri.toString());
 
   try {
     await vscode.commands.executeCommand('vscode.open', uri, {
@@ -24,6 +24,20 @@ export async function openPdf(
       preserveFocus,
     });
   }
+}
+
+function buildPdfOpenUri(pdfPath: string, currentPdf: string | undefined): vscode.Uri {
+  const target = vscode.Uri.file(pdfPath);
+  if (!currentPdf) {
+    return target;
+  }
+
+  const currentUri = vscode.Uri.parse(currentPdf);
+  if (currentUri.scheme !== 'file' || currentUri.fsPath !== target.fsPath || !currentUri.fragment) {
+    return target;
+  }
+
+  return target.with({ fragment: currentUri.fragment });
 }
 
 export function getPdfPathForTex(texFile: string, outputDirectory: string): string {
