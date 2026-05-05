@@ -14,6 +14,7 @@ export interface ResolveOptions {
 }
 
 const TEX_ROOT_REGEX = /^%\s*!TEX\s+root\s*=\s*(.+)$/im;
+const TEX_FILE_REGEX = /\.tex$/i;
 
 async function parseTexRootDirective(
   filePath: string,
@@ -61,9 +62,20 @@ export async function resolveMainFile(options: ResolveOptions): Promise<string |
     return mainTex;
   }
 
-  // 4. Single .tex file in workspace root
-  const allTex = await fs.findFiles(workspaceRoot, /\.tex$/);
-  const rootTex = allTex.filter((f) => path.dirname(f) === workspaceRoot);
+  // 4. main.tex anywhere in the workspace
+  const allTex = await fs.findFiles(workspaceRoot, TEX_FILE_REGEX);
+  const nestedMainTex = allTex.find((file) => path.basename(file).toLowerCase() === 'main.tex');
+  if (nestedMainTex) {
+    return nestedMainTex;
+  }
+
+  // 5. Current editor if it is a .tex file
+  if (openEditorFile && TEX_FILE_REGEX.test(openEditorFile) && await fs.exists(openEditorFile)) {
+    return openEditorFile;
+  }
+
+  // 6. Single .tex file in workspace
+  const rootTex = allTex.filter((file) => !file.includes(`${path.sep}node_modules${path.sep}`));
   if (rootTex.length === 1) {
     return rootTex[0];
   }

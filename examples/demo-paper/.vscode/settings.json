@@ -1,0 +1,6 @@
+{
+  "latexOneClick.mainFile": "main.tex",
+  "latexOneClick.outputDirectory": "out",
+  "latexOneClick.preview.autoOpen": true,
+  "latexOneClick.syncTeX": true
+}

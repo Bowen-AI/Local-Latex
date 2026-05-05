@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { getSettings } from '../config/settings';
 import { getWorkspaceRoot } from '../core/projectLocator';
+import { resolveOutputDirectory } from '../core/compiler';
 import { log } from '../core/outputChannel';
 
 export async function cleanCommand(): Promise<void> {
@@ -13,7 +14,7 @@ export async function cleanCommand(): Promise<void> {
   }
 
   const settings = getSettings(vscode.Uri.file(root));
-  const outDir = path.join(root, settings.outputDirectory);
+  const outDir = resolveOutputDirectory(root, settings.outputDirectory);
 
   if (!fs.existsSync(outDir)) {
     await vscode.window.showInformationMessage(`LaTeX One-Click: Output directory does not exist: ${outDir}`);

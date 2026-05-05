@@ -11,6 +11,7 @@ import { disposeOutputChannel, log } from './core/outputChannel';
 import { disposeDiagnostics } from './core/diagnostics';
 import { RuntimeManager } from './runtime/runtimeManager';
 import { updateCurrentPdfView } from './preview/previewState';
+import { disposePdfPreviews } from './preview/pdfPreview';
 
 let statusBar: vscode.StatusBarItem;
 const disposables: vscode.Disposable[] = [];
@@ -37,9 +38,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(
     vscode.commands.registerCommand('latexOneClick.compile', () =>
-      compileCommand(storagePath, statusBar)
+      compileCommand(storagePath, statusBar, context.extensionUri)
     ),
-    vscode.commands.registerCommand('latexOneClick.openPdf', openPdfCommand),
+    vscode.commands.registerCommand('latexOneClick.openPdf', () => openPdfCommand(context.extensionUri)),
     vscode.commands.registerCommand('latexOneClick.clean', cleanCommand),
     vscode.commands.registerCommand('latexOneClick.selectRoot', selectRootCommand),
     vscode.commands.registerCommand('latexOneClick.doctor', () => doctorCommand(storagePath))
@@ -49,7 +50,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const settings = getSettings(vscode.Uri.file(root));
     if (settings.autoCompileOnSave) {
       const debouncedCompile = debounce(() => {
-        compileCommand(storagePath, statusBar).catch(() => undefined);
+        compileCommand(storagePath, statusBar, context.extensionUri).catch(() => undefined);
       }, settings.compileDebounceMs);
 
       const watcher = vscode.workspace.onDidSaveTextDocument((doc) => {
@@ -98,6 +99,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 export function deactivate(): void {
   disposables.forEach((d) => d.dispose());
+  disposePdfPreviews();
   disposeDiagnostics();
   disposeOutputChannel();
 }

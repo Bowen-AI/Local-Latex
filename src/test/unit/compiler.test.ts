@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildCompileArgs } from '../../core/compiler';
+import { buildCompileArgs, resolveOutputDirectory } from '../../core/compiler';
 
 describe('compiler args', () => {
   it('includes --synctex by default workflow when enabled', () => {
@@ -11,7 +11,6 @@ describe('compiler args', () => {
     });
 
     expect(args).toEqual([
-      'compile',
       '--outdir',
       'out',
       '--synctex',
@@ -28,11 +27,18 @@ describe('compiler args', () => {
     });
 
     expect(args).toEqual([
-      'compile',
       '--outdir',
       'build',
       '--only-cached',
       '/workspace/thesis.tex',
     ]);
+  });
+
+  it('resolves relative output directories inside the workspace', () => {
+    expect(resolveOutputDirectory('/workspace', 'out')).toBe('/workspace/out');
+  });
+
+  it('preserves absolute output directories', () => {
+    expect(resolveOutputDirectory('/workspace', '/tmp/build')).toBe('/tmp/build');
   });
 });

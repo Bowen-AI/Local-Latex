@@ -15,7 +15,7 @@ describe('previewState', () => {
     updateCurrentPdfView(workspace, 'file:///workspace/project/out/main.pdf#page=3');
 
     expect(getCurrentPdf(workspace)).toBe('file:///workspace/project/out/main.pdf#page=3');
-    expect(getCurrentPdfPath(workspace)).toBe('file:///workspace/project/out/main.pdf');
+    expect(getCurrentPdfPath(workspace)).toBe('/workspace/project/out/main.pdf');
 
     clearPreviewState(workspace);
   });

@@ -24,8 +24,14 @@ export interface CompileResult {
   timedOut: boolean;
 }
 
+export function resolveOutputDirectory(workspaceRoot: string, outputDirectory: string): string {
+  return path.isAbsolute(outputDirectory)
+    ? outputDirectory
+    : path.join(workspaceRoot, outputDirectory);
+}
+
 export function buildCompileArgs(options: Pick<CompileOptions, 'outputDirectory' | 'offlineOnly' | 'mainFile' | 'synctex'>): string[] {
-  const args = ['compile', '--outdir', options.outputDirectory];
+  const args = ['--outdir', options.outputDirectory];
   if (options.synctex) {
     args.push('--synctex');
   }
@@ -72,7 +78,7 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
   const logs = parseLog(combined, path.basename(mainFile));
 
   const outputPdf = result.exitCode === 0
-    ? path.join(workspaceRoot, outputDirectory, path.basename(mainFile, '.tex') + '.pdf')
+    ? path.join(resolveOutputDirectory(workspaceRoot, outputDirectory), path.basename(mainFile, '.tex') + '.pdf')
     : undefined;
 
   return {
