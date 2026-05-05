@@ -45,7 +45,7 @@
       },
       {
         "command": "latexOneClick.openPdf",
-        "title": "LaTeX: Open PDF"
+        "title": "LaTeX: Open PDF Preview"
       },
       {
         "command": "latexOneClick.clean",
@@ -144,6 +144,7 @@
     "@vitest/coverage-v8": "^1.0.0",
     "@vscode/vsce": "^3.7.1",
     "eslint": "^9.0.0",
+    "pdfjs-dist": "^5.7.284",
     "prettier": "^3.0.0",
     "typescript": "^5.3.0",
     "vitest": "^1.0.0"

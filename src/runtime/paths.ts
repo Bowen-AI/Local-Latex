@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as os from 'os';
 
-export const TECTONIC_VERSION = '0.15.0';
+export const TECTONIC_VERSION = '0.16.9';
 
 export function getRuntimeDir(storagePath: string): string {
   return path.join(storagePath, 'runtime');

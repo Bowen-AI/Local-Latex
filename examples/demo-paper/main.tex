@@ -1,0 +1,62 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+
+\title{LaTeX One-Click Demo}
+\author{A tiny example workspace}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This document shows the happy path for the LaTeX One-Click extension:
+find the main file, compile with the bundled Tectonic runtime, write a PDF,
+and open it beside the editor.
+\end{abstract}
+
+\section{What the Extension Does}
+
+When you run \textbf{LaTeX: Compile Document}, the extension:
+
+\begin{enumerate}
+  \item resolves the main \texttt{.tex} file,
+  \item ensures the local Tectonic runtime is available,
+  \item creates the configured output folder,
+  \item runs Tectonic with SyncTeX enabled, and
+  \item opens the generated PDF.
+\end{enumerate}
+
+\section{A Small Table}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Feature & Example setting & Result \\
+\midrule
+Main file & \texttt{main.tex} & predictable builds \\
+Output directory & \texttt{out} & clean project root \\
+SyncTeX & enabled & source/PDF coordination \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\input{sections/findings}
+
+\section{Tiny Formula}
+
+The extension does not need a separate TeX install. Tectonic handles the build:
+\[
+  \mathrm{usable} = \mathrm{compile} + \mathrm{preview} + \mathrm{diagnostics}.
+\]
+
+\section{Next Steps}
+
+Try making a syntax error, such as deleting a closing brace, then compile again.
+The Problems panel should show the diagnostic from the LaTeX log.
+
+\end{document}

@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'url';
+
 const previewMap = new Map<string, string>();
 
 function stripFragment(uriOrPath: string): string {
@@ -34,7 +36,20 @@ export function updateCurrentPdfView(workspaceFolder: string, viewUriOrPath: str
 
 export function getCurrentPdfPath(workspaceFolder: string): string | undefined {
   const current = previewMap.get(workspaceFolder);
-  return current ? stripFragment(current) : undefined;
+  if (!current) {
+    return undefined;
+  }
+
+  const withoutFragment = stripFragment(current);
+  if (!withoutFragment.startsWith('file://')) {
+    return withoutFragment;
+  }
+
+  try {
+    return fileURLToPath(withoutFragment);
+  } catch {
+    return withoutFragment;
+  }
 }
 
 export function getCurrentPdf(workspaceFolder: string): string | undefined {

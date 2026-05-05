@@ -72,4 +72,33 @@ describe('mainFileResolver', () => {
     const result = await resolveMainFile({ workspaceRoot: ROOT, fs });
     expect(result).toBe(singleFile);
   });
+
+  it('returns nested main.tex if workspace root has no main.tex', async () => {
+    const nestedMain = path.join(ROOT, 'paper', 'main.tex');
+    const fs = makeFs(
+      [nestedMain],
+      {},
+      { [ROOT]: [nestedMain] }
+    );
+
+    const result = await resolveMainFile({ workspaceRoot: ROOT, fs });
+    expect(result).toBe(nestedMain);
+  });
+
+  it('returns current editor .tex file when there is no main file', async () => {
+    const editorFile = path.join(ROOT, 'chapter.tex');
+    const fs = makeFs(
+      [editorFile],
+      { [editorFile]: '\\section{Standalone}' },
+      { [ROOT]: [editorFile, path.join(ROOT, 'notes.tex')] }
+    );
+
+    const result = await resolveMainFile({
+      workspaceRoot: ROOT,
+      openEditorFile: editorFile,
+      fs,
+    });
+
+    expect(result).toBe(editorFile);
+  });
 });
