@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { getSettings } from '../config/settings';
 import { getWorkspaceRoot } from '../core/projectLocator';
-import { getCurrentPdf } from '../preview/previewState';
+import { getCurrentPdf, getCurrentPdfPath } from '../preview/previewState';
 import { openPdf } from '../preview/pdfPreview';
 
 export async function openPdfCommand(): Promise<void> {
@@ -15,7 +15,9 @@ export async function openPdfCommand(): Promise<void> {
   const settings = getSettings(vscode.Uri.file(root));
   const pdfPath = getCurrentPdf(root);
 
-  if (!pdfPath || !fs.existsSync(pdfPath)) {
+  const pdfFilePath = getCurrentPdfPath(root);
+
+  if (!pdfPath || !pdfFilePath || !fs.existsSync(pdfFilePath)) {
     await vscode.window.showWarningMessage('LaTeX One-Click: No compiled PDF found. Please compile first.');
     return;
   }

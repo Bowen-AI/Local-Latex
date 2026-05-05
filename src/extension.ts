@@ -10,6 +10,7 @@ import { debounce } from './core/debounce';
 import { disposeOutputChannel, log } from './core/outputChannel';
 import { disposeDiagnostics } from './core/diagnostics';
 import { RuntimeManager } from './runtime/runtimeManager';
+import { updateCurrentPdfView } from './preview/previewState';
 
 let statusBar: vscode.StatusBarItem;
 const disposables: vscode.Disposable[] = [];
@@ -63,6 +64,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   setupAutoCompile();
 
   context.subscriptions.push(
+    vscode.window.onDidChangeActiveTextEditor((editor) => {
+      if (!editor) {
+        return;
+      }
+
+      updateCurrentPdfView(root, editor.document.uri.toString());
+    }),
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration('latexOneClick')) {
         disposables.forEach((d) => d.dispose());
