@@ -1,4 +1,5 @@
 .vscode/**
+.codex-tmp/**
 node_modules/**
 src/**
 tsconfig.json
@@ -7,11 +8,13 @@ prettier.config.cjs
 vitest.config.ts
 scripts/**
 docs/**
+website/**
+examples/**
 .github/**
 .gitignore
-CHANGELOG.md
+*.vsix
 coverage/**
 *.test.ts
-!out/**
+out/**/*.d.ts
 !package.json
 !resources/**

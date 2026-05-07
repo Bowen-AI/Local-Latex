@@ -12,7 +12,8 @@ const ERROR_REGEX = /^! (.+)$/m;
 const LINE_REGEX = /^l\.(\d+)/m;
 const FILE_REGEX = /\(([^)]+\.tex)/;
 const WARNING_REGEX = /^LaTeX Warning: (.+)$/m;
-const OVERFULL_REGEX = /^(Overfull|Underfull) \\[hv]box (.+) at lines? (\d+)/m;
+const WARNING_LINE_REGEX = /(?:on input line|line) (\d+)/i;
+const OVERFULL_REGEX = /^(Overfull|Underfull) \\([hv])box (.+) at lines? (\d+)/m;
 
 function parseSingleBlock(block: string, defaultFile: string): LogEntry | null {
   const errorMatch = ERROR_REGEX.exec(block);
@@ -31,9 +32,10 @@ function parseSingleBlock(block: string, defaultFile: string): LogEntry | null {
   const warnMatch = WARNING_REGEX.exec(block);
   if (warnMatch) {
     const fileMatch = FILE_REGEX.exec(block);
+    const lineMatch = WARNING_LINE_REGEX.exec(warnMatch[1]);
     return {
       file: fileMatch ? fileMatch[1] : defaultFile,
-      line: 0,
+      line: lineMatch ? parseInt(lineMatch[1], 10) : 0,
       column: 0,
       severity: 'warning',
       message: warnMatch[1].trim(),
@@ -44,10 +46,10 @@ function parseSingleBlock(block: string, defaultFile: string): LogEntry | null {
   if (overfullMatch) {
     return {
       file: defaultFile,
-      line: parseInt(overfullMatch[3], 10),
+      line: parseInt(overfullMatch[4], 10),
       column: 0,
       severity: 'warning',
-      message: `${overfullMatch[1]} \\hbox ${overfullMatch[2]}`.trim(),
+      message: `${overfullMatch[1]} \\${overfullMatch[2]}box ${overfullMatch[3]}`.trim(),
     };
   }
 

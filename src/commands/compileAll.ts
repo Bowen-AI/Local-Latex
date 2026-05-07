@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { findTexFiles, getWorkspaceRoot } from '../core/projectLocator';
-import { compile } from '../core/compiler';
+import { compile, resolveOutputDirectory } from '../core/compiler';
+import { validateWorkspaceOutputDirectory } from '../core/workspaceSafety';
 import { log } from '../core/outputChannel';
 import { RuntimeManager } from '../runtime/runtimeManager';
 import { getSettings } from '../config/settings';
@@ -13,6 +14,13 @@ export async function compileAllCommand(storagePath: string): Promise<void> {
   }
 
   const settings = getSettings(vscode.Uri.file(root));
+  const outDir = resolveOutputDirectory(root, settings.outputDirectory);
+  const outputDirectoryError = validateWorkspaceOutputDirectory(root, outDir);
+  if (outputDirectoryError) {
+    await vscode.window.showWarningMessage(`LaTeX One-Click: ${outputDirectoryError}`);
+    return;
+  }
+
   const texFiles = await findTexFiles(root);
 
   if (texFiles.length === 0) {

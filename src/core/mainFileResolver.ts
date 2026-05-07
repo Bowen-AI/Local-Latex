@@ -1,4 +1,5 @@
 import * as path from 'path';
+import { isPathInside } from './workspaceSafety';
 
 export interface FileSystemOps {
   exists(filePath: string): Promise<boolean>;
@@ -16,6 +17,24 @@ export interface ResolveOptions {
 const TEX_ROOT_REGEX = /^%\s*!TEX\s+root\s*=\s*(.+)$/im;
 const TEX_FILE_REGEX = /\.tex$/i;
 
+function toWorkspaceTexPath(workspaceRoot: string, filePath: string): string | undefined {
+  const resolved = path.resolve(filePath);
+  if (!TEX_FILE_REGEX.test(resolved)) {
+    return undefined;
+  }
+  if (!isPathInside(workspaceRoot, resolved)) {
+    return undefined;
+  }
+  return resolved;
+}
+
+function cleanTexRootValue(value: string): string {
+  return value
+    .replace(/\s+%.*$/, '')
+    .trim()
+    .replace(/^["']|["']$/g, '');
+}
+
 async function parseTexRootDirective(
   filePath: string,
   fs: FileSystemOps
@@ -24,7 +43,7 @@ async function parseTexRootDirective(
     const content = await fs.readFile(filePath);
     const match = TEX_ROOT_REGEX.exec(content);
     if (match) {
-      return match[1].trim();
+      return cleanTexRootValue(match[1]);
     }
   } catch {
     // ignore
@@ -39,19 +58,24 @@ export async function resolveMainFile(options: ResolveOptions): Promise<string |
   if (settingMainFile) {
     const abs = path.isAbsolute(settingMainFile)
       ? settingMainFile
-      : path.join(workspaceRoot, settingMainFile);
-    if (await fs.exists(abs)) {
-      return abs;
+      : path.resolve(workspaceRoot, settingMainFile);
+    const candidate = toWorkspaceTexPath(workspaceRoot, abs);
+    if (candidate && await fs.exists(candidate)) {
+      return candidate;
     }
   }
 
   // 2. TEX root directive from currently open file
-  if (openEditorFile) {
-    const root = await parseTexRootDirective(openEditorFile, fs);
+  const workspaceEditorFile = openEditorFile
+    ? toWorkspaceTexPath(workspaceRoot, openEditorFile)
+    : undefined;
+  if (workspaceEditorFile) {
+    const root = await parseTexRootDirective(workspaceEditorFile, fs);
     if (root) {
-      const abs = path.isAbsolute(root) ? root : path.join(path.dirname(openEditorFile), root);
-      if (await fs.exists(abs)) {
-        return abs;
+      const abs = path.isAbsolute(root) ? root : path.resolve(path.dirname(workspaceEditorFile), root);
+      const candidate = toWorkspaceTexPath(workspaceRoot, abs);
+      if (candidate && await fs.exists(candidate)) {
+        return candidate;
       }
     }
   }
@@ -70,8 +94,8 @@ export async function resolveMainFile(options: ResolveOptions): Promise<string |
   }
 
   // 5. Current editor if it is a .tex file
-  if (openEditorFile && TEX_FILE_REGEX.test(openEditorFile) && await fs.exists(openEditorFile)) {
-    return openEditorFile;
+  if (workspaceEditorFile && await fs.exists(workspaceEditorFile)) {
+    return workspaceEditorFile;
   }
 
   // 6. Single .tex file in workspace

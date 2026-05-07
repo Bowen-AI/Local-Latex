@@ -11,10 +11,11 @@ describe('logParser', () => {
   });
 
   it('parses a LaTeX warning', () => {
-    const log = `LaTeX Warning: Label \`fig:1' multiply defined.`;
+    const log = `LaTeX Warning: Label \`fig:1' multiply defined on input line 12.`;
     const entries = parseLog(log, 'main.tex');
     expect(entries.length).toBeGreaterThan(0);
     expect(entries[0].severity).toBe('warning');
+    expect(entries[0].line).toBe(12);
   });
 
   it('returns empty array for clean output', () => {
@@ -33,5 +34,16 @@ describe('logParser', () => {
     const log = `! Undefined control sequence.\nl.42 \\unknowncommand`;
     const entries = parseLog(log, 'main.tex');
     expect(entries[0].line).toBe(42);
+  });
+
+  it('keeps the box type for underfull vbox diagnostics', () => {
+    const log = `Underfull \\vbox (badness 10000) has occurred while \\output is active at lines 7--8`;
+    const entries = parseLog(log, 'main.tex');
+
+    expect(entries[0]).toMatchObject({
+      severity: 'warning',
+      line: 7,
+      message: 'Underfull \\vbox (badness 10000) has occurred while \\output is active',
+    });
   });
 });

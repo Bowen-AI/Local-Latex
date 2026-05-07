@@ -16,8 +16,11 @@ export async function doctorCommand(storagePath: string): Promise<void> {
   const platform = detectPlatform();
   channel.appendLine(`OS: ${platform.os} (${os.release()})`);
   channel.appendLine(`Architecture: ${platform.arch}`);
-  channel.appendLine(`Platform ID: ${platform.platformId}`);
-  channel.appendLine(`Supported: ${isSupportedPlatform() ? 'Yes' : 'No'}`);
+  channel.appendLine(`Platform ID: ${platform.platformId ?? 'n/a'}`);
+  channel.appendLine(`Supported: ${platform.supported && isSupportedPlatform() ? 'Yes' : 'No'}`);
+  if (platform.unsupportedReason) {
+    channel.appendLine(`Reason: ${platform.unsupportedReason}`);
+  }
   channel.appendLine('');
 
   const manager = new RuntimeManager({ storagePath });

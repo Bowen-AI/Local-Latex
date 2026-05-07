@@ -27,7 +27,19 @@ export interface CompileResult {
 export function resolveOutputDirectory(workspaceRoot: string, outputDirectory: string): string {
   return path.isAbsolute(outputDirectory)
     ? outputDirectory
-    : path.join(workspaceRoot, outputDirectory);
+    : path.resolve(workspaceRoot, outputDirectory);
+}
+
+function getTexOutputBaseName(mainFile: string): string {
+  return path.basename(mainFile).replace(/\.tex$/i, '');
+}
+
+export function getOutputPdfPath(
+  workspaceRoot: string,
+  outputDirectory: string,
+  mainFile: string
+): string {
+  return path.join(resolveOutputDirectory(workspaceRoot, outputDirectory), `${getTexOutputBaseName(mainFile)}.pdf`);
 }
 
 export function buildCompileArgs(options: Pick<CompileOptions, 'outputDirectory' | 'offlineOnly' | 'mainFile' | 'synctex'>): string[] {
@@ -78,7 +90,7 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
   const logs = parseLog(combined, path.basename(mainFile));
 
   const outputPdf = result.exitCode === 0
-    ? path.join(resolveOutputDirectory(workspaceRoot, outputDirectory), path.basename(mainFile, '.tex') + '.pdf')
+    ? getOutputPdfPath(workspaceRoot, outputDirectory, mainFile)
     : undefined;
 
   return {

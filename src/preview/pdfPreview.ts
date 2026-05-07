@@ -4,6 +4,7 @@ import * as path from 'path';
 import { resolveOutputDirectory } from '../core/compiler';
 import { getCurrentPdf, setCurrentPdf } from './previewState';
 import { findSyncTexTarget, PdfClick, readSyncTexDocument } from './synctex';
+import { toScriptStringLiteral } from './htmlEscaping';
 
 interface PreviewEntry {
   panel: vscode.WebviewPanel;
@@ -79,7 +80,7 @@ function buildPdfOpenUri(pdfPath: string, currentPdf: string | undefined): vscod
 }
 
 export function getPdfPathForTex(texFile: string, outputDirectory: string): string {
-  const base = path.basename(texFile, '.tex');
+  const base = path.basename(texFile).replace(/\.tex$/i, '');
   const dir = path.dirname(texFile);
   return path.join(resolveOutputDirectory(dir, outputDirectory), `${base}.pdf`);
 }
@@ -139,6 +140,11 @@ function buildWebviewHtml(webview: vscode.Webview, extensionUri: vscode.Uri, pdf
   const cMapsUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'pdfjs', 'cmaps')).toString();
   const standardFontsUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'pdfjs', 'standard_fonts')).toString();
   const title = escapeHtml(path.basename(pdfPath));
+  const pdfUrlLiteral = toScriptStringLiteral(pdfUri.toString());
+  const pdfJsUriLiteral = toScriptStringLiteral(pdfJsUri.toString());
+  const workerUriLiteral = toScriptStringLiteral(workerUri.toString());
+  const cMapsUriLiteral = toScriptStringLiteral(`${cMapsUri}/`);
+  const standardFontsUriLiteral = toScriptStringLiteral(`${standardFontsUri}/`);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -277,17 +283,17 @@ function buildWebviewHtml(webview: vscode.Webview, extensionUri: vscode.Uri, pdf
   <main id="viewer"></main>
 
   <script nonce="${nonce}" type="module">
-    import * as pdfjsLib from '${pdfJsUri}';
+    import * as pdfjsLib from ${pdfJsUriLiteral};
 
     const vscode = acquireVsCodeApi();
     const viewer = document.getElementById('viewer');
     const status = document.getElementById('status');
-    const pdfUrl = '${pdfUri}';
+    const pdfUrl = ${pdfUrlLiteral};
     const previousState = vscode.getState() || {};
     let pdfDocument;
     let scale = previousState.scale || 1.25;
 
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '${workerUri}';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = ${workerUriLiteral};
 
     document.getElementById('zoomOut').addEventListener('click', () => setScale(Math.max(0.5, scale - 0.15)));
     document.getElementById('zoomIn').addEventListener('click', () => setScale(Math.min(3, scale + 0.15)));
@@ -303,9 +309,9 @@ function buildWebviewHtml(webview: vscode.Webview, extensionUri: vscode.Uri, pdf
       try {
         pdfDocument = await pdfjsLib.getDocument({
           url: pdfUrl,
-          cMapUrl: '${cMapsUri}/',
+          cMapUrl: ${cMapsUriLiteral},
           cMapPacked: true,
-          standardFontDataUrl: '${standardFontsUri}/'
+          standardFontDataUrl: ${standardFontsUriLiteral}
         }).promise;
         await render();
       } catch (error) {

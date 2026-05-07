@@ -30,7 +30,7 @@
     "smoke": "npm run compile && node ./scripts/smoke-test.js",
     "test:local": "bash ./scripts/local-testbed.sh",
     "package": "vsce package --no-dependencies",
-    "package:vsix": "npm run compile && npm run test && npm run lint && vsce package --no-dependencies",
+    "package:vsix": "npm run typecheck && npm run lint && npm test && npm run smoke && vsce package --no-dependencies",
     "publish:vscode": "npm run package:vsix && vsce publish --no-dependencies",
     "publish:openvsx": "npm run package:vsix && npx @open-vsx/ovsx publish",
     "publish:all": "npm run publish:vscode && npm run publish:openvsx",
@@ -83,16 +83,6 @@
           "default": "out",
           "description": "Output directory for compiled files"
         },
-        "latexOneClick.runtimeChannel": {
-          "type": "string",
-          "enum": [
-            "stable",
-            "pinned",
-            "custom"
-          ],
-          "default": "stable",
-          "description": "Tectonic runtime channel"
-        },
         "latexOneClick.offlineOnly": {
           "type": "boolean",
           "default": false,
@@ -102,11 +92,6 @@
           "type": "number",
           "default": 60,
           "description": "Compile timeout in seconds"
-        },
-        "latexOneClick.telemetry.enabled": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable telemetry"
         },
         "latexOneClick.preview.autoOpen": {
           "type": "boolean",
@@ -122,16 +107,6 @@
           "type": "boolean",
           "default": true,
           "description": "Emit SyncTeX data during compile for source/PDF synchronization"
-        },
-        "latexOneClick.logs.verbosity": {
-          "type": "string",
-          "enum": [
-            "normal",
-            "verbose",
-            "debug"
-          ],
-          "default": "normal",
-          "description": "Log verbosity"
         }
       }
     }

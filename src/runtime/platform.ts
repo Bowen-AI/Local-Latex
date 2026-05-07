@@ -5,7 +5,9 @@ export type PlatformId = 'darwin-arm64' | 'darwin-x64' | 'windows-x64' | 'linux-
 export interface PlatformInfo {
   os: NodeJS.Platform;
   arch: string;
-  platformId: PlatformId;
+  platformId?: PlatformId;
+  supported: boolean;
+  unsupportedReason?: string;
 }
 
 export const SUPPORTED_PLATFORMS: PlatformId[] = [
@@ -15,30 +17,43 @@ export const SUPPORTED_PLATFORMS: PlatformId[] = [
   'linux-x64',
 ];
 
-export function getPlatformId(): PlatformId {
-  const platform = os.platform();
-  const arch = os.arch();
-
+export function resolvePlatformId(platform: NodeJS.Platform, arch: string): PlatformId {
   if (platform === 'darwin' && arch === 'arm64') return 'darwin-arm64';
-  if (platform === 'darwin') return 'darwin-x64';
-  if (platform === 'win32') return 'windows-x64';
-  if (platform === 'linux') return 'linux-x64';
+  if (platform === 'darwin' && arch === 'x64') return 'darwin-x64';
+  if (platform === 'win32' && arch === 'x64') return 'windows-x64';
+  if (platform === 'linux' && arch === 'x64') return 'linux-x64';
 
   throw new Error(`Unsupported platform: ${platform}-${arch}`);
 }
 
-export function detectPlatform(): PlatformInfo {
-  const platformId = getPlatformId();
-  return {
-    os: os.platform(),
-    arch: os.arch(),
-    platformId,
-  };
+export function getPlatformId(): PlatformId {
+  return resolvePlatformId(os.platform(), os.arch());
 }
 
-export function isSupportedPlatform(): boolean {
+export function detectPlatform(): PlatformInfo {
+  const platform = os.platform();
+  const arch = os.arch();
+
   try {
-    getPlatformId();
+    return {
+      os: platform,
+      arch,
+      platformId: resolvePlatformId(platform, arch),
+      supported: true,
+    };
+  } catch (error) {
+    return {
+      os: platform,
+      arch,
+      supported: false,
+      unsupportedReason: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+export function isSupportedPlatform(platform = os.platform(), arch = os.arch()): boolean {
+  try {
+    resolvePlatformId(platform, arch);
     return true;
   } catch {
     return false;

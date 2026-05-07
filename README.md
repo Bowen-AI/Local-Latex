@@ -80,14 +80,13 @@ npm run test:local
 | `latexOneClick.compileDebounceMs` | number | `1000` | Debounce delay for auto-compile (ms) |
 | `latexOneClick.mainFile` | string | `""` | Main `.tex` file to compile |
 | `latexOneClick.outputDirectory` | string | `"out"` | Output directory for compiled files |
-| `latexOneClick.runtimeChannel` | string | `"stable"` | Tectonic runtime channel |
 | `latexOneClick.offlineOnly` | boolean | `false` | Use only cached packages |
 | `latexOneClick.compileTimeoutSec` | number | `60` | Compilation timeout in seconds |
-| `latexOneClick.telemetry.enabled` | boolean | `false` | Enable telemetry |
 | `latexOneClick.preview.autoOpen` | boolean | `true` | Auto-open PDF after compile |
 | `latexOneClick.preview.preserveFocus` | boolean | `true` | Keep editor focus when PDF opens |
 | `latexOneClick.syncTeX` | boolean | `true` | Generate SyncTeX metadata (`.synctex.gz`) on compile |
-| `latexOneClick.logs.verbosity` | string | `"normal"` | Log verbosity (`normal`/`verbose`/`debug`) |
+
+Compile and clean actions only use output directories inside the current workspace and refuse filesystem roots, the home directory, the workspace root, and symlinked paths that resolve outside the workspace.
 
 ---
 
@@ -122,7 +121,7 @@ Run `LaTeX: Doctor` for a health check of the extension and runtime.
 
 ## 🔒 Privacy
 
-No telemetry is collected by default. The only network request is downloading the Tectonic binary from GitHub Releases on first use. All compilation happens locally.
+No telemetry is collected. The only network request is downloading the Tectonic binary from GitHub Releases on first use. All compilation happens locally.
 
 ---
 

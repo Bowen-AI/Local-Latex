@@ -24,18 +24,50 @@ export async function runProcess(options: ProcessOptions): Promise<ProcessResult
     const stdout: string[] = [];
     const stderr: string[] = [];
     let timedOut = false;
+    let settled = false;
 
     const proc = spawn(command, args, { cwd, shell: false });
+    let timer: NodeJS.Timeout | undefined;
+    let killTimer: NodeJS.Timeout | undefined;
 
-    const timer = setTimeout(() => {
-      timedOut = true;
+    const terminate = (): void => {
+      if (killTimer) return;
       proc.kill('SIGTERM');
+      killTimer = setTimeout(() => {
+        proc.kill('SIGKILL');
+      }, 2000);
+    };
+
+    const finish = (result: ProcessResult): void => {
+      if (settled) return;
+      settled = true;
+      if (timer) {
+        clearTimeout(timer);
+      }
+      if (killTimer) {
+        clearTimeout(killTimer);
+      }
+      signal?.removeEventListener('abort', abort);
+      resolve(result);
+    };
+
+    const abort = (): void => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+      terminate();
+    };
+
+    timer = setTimeout(() => {
+      timedOut = true;
+      terminate();
     }, timeoutMs);
 
-    signal?.addEventListener('abort', () => {
-      clearTimeout(timer);
-      proc.kill('SIGTERM');
-    });
+    if (signal?.aborted) {
+      abort();
+    } else {
+      signal?.addEventListener('abort', abort, { once: true });
+    }
 
     proc.stdout.on('data', (chunk: Buffer) => {
       const text = chunk.toString();
@@ -50,8 +82,7 @@ export async function runProcess(options: ProcessOptions): Promise<ProcessResult
     });
 
     proc.on('close', (code) => {
-      clearTimeout(timer);
-      resolve({
+      finish({
         exitCode: code ?? 1,
         stdout: stdout.join(''),
         stderr: stderr.join(''),
@@ -60,8 +91,7 @@ export async function runProcess(options: ProcessOptions): Promise<ProcessResult
     });
 
     proc.on('error', (err) => {
-      clearTimeout(timer);
-      resolve({
+      finish({
         exitCode: 1,
         stdout: stdout.join(''),
         stderr: err.message,

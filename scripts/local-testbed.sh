@@ -12,7 +12,7 @@ npm run compile
 npm run typecheck
 npm run lint
 npm test
-node ./scripts/smoke-test.js
+npm run smoke
 
 echo "==> Packaging VSIX"
 VSIX_FILE="$(npx vsce package --no-dependencies | tail -n1 | awk '{print $NF}')"

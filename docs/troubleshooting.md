@@ -26,6 +26,11 @@ The file must have language ID `latex` or end with `.tex`.
 Increase `latexOneClick.compileTimeoutSec` (default: 60).
 Large documents or first-run package downloads may take longer.
 
+## Compile fails with "Invalid output directory"
+
+Set `latexOneClick.outputDirectory` to a folder inside the current workspace, such as `out` or `build/latex`.
+The extension refuses filesystem roots, the home directory, the workspace root, and paths outside the workspace.
+
 ## Missing packages / offline mode
 
 If `latexOneClick.offlineOnly` is `true`, only cached packages are used.

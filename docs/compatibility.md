@@ -21,5 +21,7 @@ The extension runs in the VS Code extension host. No separate Node.js installati
 
 ## TeX Engine
 
-LaTeX One-Click uses [Tectonic](https://tectonic-typesetting.github.io/) 0.15.0, which is based on XeTeX.
+LaTeX One-Click uses [Tectonic](https://tectonic-typesetting.github.io/) 0.16.9, which is based on XeTeX.
 pdfLaTeX-specific packages may not be compatible.
+
+The active runtime version is defined in `resources/runtime-manifest.json`. The extension records the installed runtime version and platform in global storage; if the bundled manifest changes in a future release, the runtime is refreshed before compilation.

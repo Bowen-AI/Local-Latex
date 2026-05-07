@@ -5,6 +5,7 @@ import { getSettings } from '../config/settings';
 import { getWorkspaceRoot } from '../core/projectLocator';
 import { resolveMainFile, FileSystemOps } from '../core/mainFileResolver';
 import { compile, resolveOutputDirectory } from '../core/compiler';
+import { validateWorkspaceOutputDirectory } from '../core/workspaceSafety';
 import { applyDiagnostics } from '../core/diagnostics';
 import { log } from '../core/outputChannel';
 import { setState } from '../core/stateStore';
@@ -70,6 +71,15 @@ export async function compileCommand(
     return;
   }
 
+  const outDir = resolveOutputDirectory(root, settings.outputDirectory);
+  const outputDirectoryError = validateWorkspaceOutputDirectory(root, outDir);
+  if (outputDirectoryError) {
+    statusBar.text = '$(error) Invalid output directory';
+    setState(root, { status: 'error', lastError: outputDirectoryError });
+    await vscode.window.showWarningMessage(`LaTeX One-Click: ${outputDirectoryError}`);
+    return;
+  }
+
   const manager = new RuntimeManager({ storagePath });
   if (!(await manager.isReady())) {
     const choice = await vscode.window.showInformationMessage(
@@ -82,9 +92,21 @@ export async function compileCommand(
     await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: 'Downloading Tectonic...' },
       async (progress) => {
-        await manager.ensureRuntime((msg) => progress.report({ message: msg }));
+        try {
+          await manager.ensureRuntime((msg) => progress.report({ message: msg }));
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          statusBar.text = '$(error) Runtime unavailable';
+          setState(root, { status: 'error', lastError: message });
+          log(`Runtime setup failed: ${message}`);
+          await vscode.window.showErrorMessage(`LaTeX One-Click: Runtime setup failed: ${message}`);
+        }
       }
     );
+
+    if (!(await manager.isReady())) {
+      return;
+    }
   }
 
   statusBar.text = '$(sync~spin) Compiling...';
@@ -94,7 +116,7 @@ export async function compileCommand(
   const abortController = new AbortController();
 
   try {
-    fs.mkdirSync(resolveOutputDirectory(root, settings.outputDirectory), { recursive: true });
+    fs.mkdirSync(outDir, { recursive: true });
 
     await vscode.window.withProgress(
       {
