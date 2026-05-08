@@ -18,22 +18,35 @@
   ],
   "activationEvents": [
     "onLanguage:latex",
-    "workspaceContains:**/*.tex"
+    "workspaceContains:**/*.[tT][eE][xX]",
+    "onCommand:latexOneClick.compile",
+    "onCommand:latexOneClick.openPdf",
+    "onCommand:latexOneClick.clean",
+    "onCommand:latexOneClick.selectRoot",
+    "onCommand:latexOneClick.doctor"
   ],
   "main": "./out/extension.js",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "LaTeX: Doctor can report trust, runtime, and workspace status. Compile, clean, preview, and root-selection commands require a trusted workspace."
+    }
+  },
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:extension": "npm run compile && node ./scripts/extension-host-smoke.js",
     "smoke": "npm run compile && node ./scripts/smoke-test.js",
     "test:local": "bash ./scripts/local-testbed.sh",
-    "package": "vsce package --no-dependencies",
-    "package:vsix": "npm run typecheck && npm run lint && npm test && npm run smoke && vsce package --no-dependencies",
-    "publish:vscode": "npm run package:vsix && vsce publish --no-dependencies",
-    "publish:openvsx": "npm run package:vsix && npx @open-vsx/ovsx publish",
-    "publish:all": "npm run publish:vscode && npm run publish:openvsx",
+    "package": "npm run compile && npm run package:check && vsce package --no-dependencies",
+    "package:check": "node ./scripts/check-package-contents.js",
+    "package:vsix": "npm run compile && npm run typecheck && npm run lint && npm test && npm run smoke && npm run package",
+    "publish:vscode": "bash ./scripts/publish-extension.sh vscode",
+    "publish:openvsx": "bash ./scripts/publish-extension.sh openvsx",
+    "publish:all": "bash ./scripts/publish-extension.sh all",
     "release:marketplaces": "bash ./scripts/publish-extension.sh",
     "vscode:prepublish": "npm run compile"
   },

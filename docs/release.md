@@ -11,20 +11,28 @@ npm run typecheck
 npm test
 npm run compile
 npm run smoke
+LATEX_ONE_CLICK_REQUIRE_EXTENSION_HOST=1 npm run test:extension
+npm run package:check
 npm run package
 npx vsce ls --no-dependencies
 ```
 
-Review `npx vsce ls --no-dependencies` before publishing. The VSIX should include `package.json`, `README.md`, `LICENSE`, `CHANGELOG.md`, compiled JavaScript under `out/`, `resources/runtime-manifest.json`, and `media/pdfjs/`. It should not include generated demo PDFs, generated SyncTeX files, sample projects, the website source, repository docs, source TypeScript, tests, CI files, or declaration files.
+`npm run package:check` validates the `npx vsce ls --no-dependencies` output against the GA package allowlist/blocklist and checks release-critical package metadata. The VSIX should include `package.json`, `README.md`, `LICENSE`, `CHANGELOG.md`, compiled JavaScript under `out/`, `resources/runtime-manifest.json`, and `media/pdfjs/`. It should not include generated demo PDFs, generated SyncTeX files, sample projects, the website source, repository docs, source TypeScript, tests, CI files, local VSIX files, or declaration files. The same gate also fails if the runtime manifest has unsupported platform drift, placeholder checksums, wrong binary names, URLs that do not match the bundled runtime version, missing mixed-case TeX workspace activation, or exposed settings for features that are not implemented.
+
+The same package gate also checks the marketplace README for the GA privacy disclosure: no telemetry, first-use runtime download from GitHub Releases, possible Tectonic package downloads during compilation, and the `latexOneClick.offlineOnly` opt-out for package fetching.
 
 Manual verification for GA:
 
 - Install the packaged VSIX in VS Code.
 - Open `examples/demo-paper`.
-- Run `LaTeX: Doctor` and confirm the detected platform is supported.
+- Run `LATEX_ONE_CLICK_REQUIRE_EXTENSION_HOST=1 npm run test:extension` on a machine with the VS Code `code` CLI to verify extension-host activation, command registration, Doctor, PDF preview, and Clean in an isolated temp workspace.
+- Run `LaTeX: Doctor` and confirm runtime version, supported platform, binary readiness, workspace trust/root, resolved main file, resolved output directory, and key compile/preview settings are visible.
+- Open an untrusted workspace or no-folder window and confirm `LaTeX: Doctor` still reports limited diagnostic state while compile, clean, preview, and root selection activate but stop with a trust or workspace warning before accessing project files.
 - Run `LaTeX: Compile Document` with a clean runtime cache to exercise first-run download, checksum verification, staged extraction, runtime metadata, compile, diagnostics, PDF preview, and SyncTeX click-to-source navigation.
+- Confirm the README privacy section accurately distinguishes telemetry from first-run runtime downloads and Tectonic package downloads, including the `latexOneClick.offlineOnly` behavior.
 - Verify compile refuses unsafe `latexOneClick.outputDirectory` values, including symlinked paths that resolve outside the workspace, then run `LaTeX: Clean Build Artifacts` against the default workspace `out/` directory and verify clean refuses the same unsafe targets.
 - Compile a project whose folder or PDF name contains spaces, quotes, and uppercase `.TEX` to verify output-name handling and PDF preview webview escaping.
+- Keep `src/test/unit/pdfPreviewHtml.test.ts` green; it covers PDF preview title and resource URI escaping for spaces, quotes, ampersands, and script delimiter strings before the final extension-host smoke test.
 - Repeat the first-run download check on macOS arm64, macOS x64, Windows x64, and Linux x64 before marking the release GA.
 
 External release blockers:
@@ -38,7 +46,7 @@ External release blockers:
 1. Update release metadata: package version, `CHANGELOG.md`, runtime manifest, and compatibility docs.
 2. Run `npm ci` from a clean checkout.
 3. Run the GA readiness gates above and fix any failure before packaging.
-4. Inspect `npx vsce ls --no-dependencies` and confirm the package contents match the allowlist above.
+4. Run `npm run package:check` and inspect `npx vsce ls --no-dependencies` if the allowlist gate fails.
 5. Install the generated VSIX locally and complete the manual verification checklist against `examples/demo-paper`.
 6. Push the release branch and wait for CI to pass on Ubuntu, macOS, and Windows.
 7. Tag the release with `vX.Y.Z` and confirm the GitHub Release artifact is produced.
@@ -58,7 +66,7 @@ External release blockers:
 
 ```bash
 npm run compile
-npx vsce package --no-dependencies
+npm run package
 ```
 
 This produces a `.vsix` file that can be installed via `Extensions: Install from VSIX...` in VS Code.
@@ -66,7 +74,7 @@ This produces a `.vsix` file that can be installed via `Extensions: Install from
 ## Publishing to Visual Studio Marketplace
 
 ```bash
-npx vsce publish
+bash ./scripts/publish-extension.sh vscode
 ```
 
 Requires a Personal Access Token with `Marketplace (Manage)` scope set as `VSCE_PAT`.
@@ -74,7 +82,7 @@ Requires a Personal Access Token with `Marketplace (Manage)` scope set as `VSCE_
 ## Publishing to Open VSX (for Cursor/VSCodium ecosystems)
 
 ```bash
-npx @open-vsx/ovsx publish
+bash ./scripts/publish-extension.sh openvsx
 ```
 
 Requires an Open VSX token set as `OVSX_PAT`.
@@ -86,6 +94,8 @@ Use the helper script to run all checks, package, and publish:
 ```bash
 bash ./scripts/publish-extension.sh all
 ```
+
+The helper publishes the same VSIX that passed `npm run package:check`; it does not repackage a different artifact during marketplace upload.
 
 Or target a single marketplace:
 
@@ -100,4 +110,4 @@ bash ./scripts/publish-extension.sh openvsx
 npm run test:local
 ```
 
-This runs compile/typecheck/lint/tests/smoke, builds a VSIX, and installs locally when the `code` CLI is available.
+This runs compile/typecheck/lint/tests/smoke, runs the extension-host smoke when the `code` CLI is available, builds a VSIX, and installs locally when the `code` CLI is available.

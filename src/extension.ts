@@ -12,11 +12,71 @@ import { disposeDiagnostics } from './core/diagnostics';
 import { RuntimeManager } from './runtime/runtimeManager';
 import { updateCurrentPdfView } from './preview/previewState';
 import { disposePdfPreviews } from './preview/pdfPreview';
+import { isTexFile } from './core/texFiles';
+import { formatWorkspaceAccessWarning, getTrustedWorkspaceBlockReason } from './core/workspaceAccess';
 
-let statusBar: vscode.StatusBarItem;
+let statusBar: vscode.StatusBarItem | undefined;
+let trustedWorkspaceFeaturesInitialized = false;
 const disposables: vscode.Disposable[] = [];
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  const storagePath = context.globalStorageUri.fsPath;
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('latexOneClick.doctor', () => doctorCommand(storagePath)),
+    vscode.commands.registerCommand('latexOneClick.compile', () =>
+      runTrustedWorkspaceCommand(() => compileCommand(storagePath, ensureStatusBar(context), context.extensionUri))
+    ),
+    vscode.commands.registerCommand('latexOneClick.openPdf', () =>
+      runTrustedWorkspaceCommand(() => openPdfCommand(context.extensionUri))
+    ),
+    vscode.commands.registerCommand('latexOneClick.clean', () => runTrustedWorkspaceCommand(cleanCommand)),
+    vscode.commands.registerCommand('latexOneClick.selectRoot', () => runTrustedWorkspaceCommand(selectRootCommand)),
+    vscode.workspace.onDidGrantWorkspaceTrust(() => {
+      initializeTrustedWorkspaceFeatures(context, storagePath).catch((error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        log(`Failed to initialize trusted workspace features after trust grant: ${message}`);
+      });
+    })
+  );
+
+  await initializeTrustedWorkspaceFeatures(context, storagePath);
+}
+
+async function runTrustedWorkspaceCommand<T>(action: () => T | Thenable<T>): Promise<T | undefined> {
+  const blockReason = getTrustedWorkspaceBlockReason({
+    trusted: vscode.workspace.isTrusted,
+    root: getWorkspaceRoot(),
+  });
+
+  if (blockReason) {
+    await vscode.window.showWarningMessage(formatWorkspaceAccessWarning(blockReason));
+    return undefined;
+  }
+
+  return action();
+}
+
+function ensureStatusBar(context: vscode.ExtensionContext): vscode.StatusBarItem {
+  if (statusBar) {
+    return statusBar;
+  }
+
+  statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+  statusBar.text = '$(file-pdf) LaTeX';
+  statusBar.command = 'latexOneClick.compile';
+  statusBar.tooltip = 'Compile LaTeX document';
+  statusBar.show();
+  context.subscriptions.push(statusBar);
+
+  return statusBar;
+}
+
+async function initializeTrustedWorkspaceFeatures(context: vscode.ExtensionContext, storagePath: string): Promise<void> {
+  if (trustedWorkspaceFeaturesInitialized) {
+    return;
+  }
+
   if (!vscode.workspace.isTrusted) {
     log('Workspace not trusted — extension activation skipped.');
     return;
@@ -27,34 +87,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     return;
   }
 
-  const storagePath = context.globalStorageUri.fsPath;
-
-  statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-  statusBar.text = '$(file-pdf) LaTeX';
-  statusBar.command = 'latexOneClick.compile';
-  statusBar.tooltip = 'Compile LaTeX document';
-  statusBar.show();
-  context.subscriptions.push(statusBar);
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('latexOneClick.compile', () =>
-      compileCommand(storagePath, statusBar, context.extensionUri)
-    ),
-    vscode.commands.registerCommand('latexOneClick.openPdf', () => openPdfCommand(context.extensionUri)),
-    vscode.commands.registerCommand('latexOneClick.clean', cleanCommand),
-    vscode.commands.registerCommand('latexOneClick.selectRoot', selectRootCommand),
-    vscode.commands.registerCommand('latexOneClick.doctor', () => doctorCommand(storagePath))
-  );
+  trustedWorkspaceFeaturesInitialized = true;
+  ensureStatusBar(context);
 
   const setupAutoCompile = (): void => {
     const settings = getSettings(vscode.Uri.file(root));
     if (settings.autoCompileOnSave) {
       const debouncedCompile = debounce(() => {
-        compileCommand(storagePath, statusBar, context.extensionUri).catch(() => undefined);
+        compileCommand(storagePath, ensureStatusBar(context), context.extensionUri).catch(() => undefined);
       }, settings.compileDebounceMs);
 
       const watcher = vscode.workspace.onDidSaveTextDocument((doc) => {
-        if (doc.languageId === 'latex' || doc.fileName.endsWith('.tex')) {
+        if (doc.languageId === 'latex' || isTexFile(doc.fileName)) {
           debouncedCompile();
         }
       });
@@ -99,6 +143,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 export function deactivate(): void {
   disposables.forEach((d) => d.dispose());
+  trustedWorkspaceFeaturesInitialized = false;
   disposePdfPreviews();
   disposeDiagnostics();
   disposeOutputChannel();

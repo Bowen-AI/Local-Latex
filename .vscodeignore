@@ -7,6 +7,7 @@ eslint.config.mjs
 prettier.config.cjs
 vitest.config.ts
 scripts/**
+test/**
 docs/**
 website/**
 examples/**
@@ -15,6 +16,7 @@ examples/**
 *.vsix
 coverage/**
 *.test.ts
+*.test.js
 out/**/*.d.ts
 !package.json
 !resources/**

@@ -8,8 +8,12 @@ const REQUIRED_FILES = [
   'tsconfig.json',
   'out/extension.js',
   'out/core/cleaner.js',
+  'out/core/doctorReport.js',
+  'out/core/nodeFileSystem.js',
+  'out/core/workspaceAccess.js',
   'out/core/workspaceSafety.js',
   'out/preview/htmlEscaping.js',
+  'out/preview/pdfPreviewHtml.js',
   'out/runtime/runtimeManager.js',
   'media/pdfjs/build/pdf.mjs',
   'media/pdfjs/build/pdf.worker.mjs',
@@ -17,6 +21,19 @@ const REQUIRED_FILES = [
 ];
 
 const SUPPORTED_PLATFORMS = ['darwin-arm64', 'darwin-x64', 'linux-x64', 'windows-x64'];
+const REQUIRED_COMMAND_ACTIVATIONS = [
+  'latexOneClick.compile',
+  'latexOneClick.openPdf',
+  'latexOneClick.clean',
+  'latexOneClick.selectRoot',
+  'latexOneClick.doctor',
+];
+const README_REQUIRED_DISCLOSURES: Array<[string, RegExp]> = [
+  ['telemetry disclosure', /No telemetry is collected/i],
+  ['runtime download source disclosure', /Tectonic binary from official GitHub Releases/i],
+  ['Tectonic package download disclosure', /Tectonic may also download missing TeX packages/i],
+  ['offline-only package download control', /latexOneClick\.offlineOnly/i],
+];
 
 let allGood = true;
 
@@ -39,9 +56,11 @@ for (const file of REQUIRED_FILES) {
 }
 
 const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf-8')) as {
+  activationEvents?: string[];
   contributes?: { configuration?: { properties?: Record<string, unknown> } };
 };
 const settings = Object.keys(pkg.contributes?.configuration?.properties ?? {});
+const activationEvents = pkg.activationEvents ?? [];
 let configurationGood = true;
 for (const removedSetting of [
   'latexOneClick.runtimeChannel',
@@ -55,6 +74,25 @@ for (const removedSetting of [
 }
 if (configurationGood) {
   pass('package configuration does not expose unimplemented settings');
+}
+
+if (activationEvents.includes('workspaceContains:**/*.[tT][eE][xX]')) {
+  pass('package activates for mixed-case TeX workspaces');
+} else {
+  fail('Missing mixed-case TeX workspace activation event');
+}
+
+const missingCommandActivations = REQUIRED_COMMAND_ACTIVATIONS.filter(
+  (command) => !activationEvents.includes(`onCommand:${command}`)
+);
+if (missingCommandActivations.length === 0) {
+  pass('package activates contributed commands for support diagnostics');
+} else {
+  fail(
+    `Missing command activation events: ${missingCommandActivations
+      .map((command) => `onCommand:${command}`)
+      .join(', ')}`
+  );
 }
 
 const manifest = JSON.parse(
@@ -94,6 +132,18 @@ for (const platformId of SUPPORTED_PLATFORMS) {
 }
 if (runtimeManifestGood) {
   pass('runtime manifest entries are shaped for release');
+}
+
+const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf-8');
+let readmeGood = true;
+for (const [label, pattern] of README_REQUIRED_DISCLOSURES) {
+  if (!pattern.test(readme)) {
+    fail(`README.md is missing GA privacy ${label}`);
+    readmeGood = false;
+  }
+}
+if (readmeGood) {
+  pass('README.md includes GA privacy and network disclosures');
 }
 
 if (!allGood) {

@@ -2,38 +2,63 @@ import * as vscode from 'vscode';
 import * as os from 'os';
 import * as fs from 'fs';
 import { RuntimeManager } from '../runtime/runtimeManager';
-import { detectPlatform, isSupportedPlatform } from '../runtime/platform';
+import { detectPlatform } from '../runtime/platform';
 import { getOutputChannel, show } from '../core/outputChannel';
+import { getWorkspaceRoot } from '../core/projectLocator';
+import { getSettings } from '../config/settings';
+import { resolveOutputDirectory } from '../core/compiler';
+import { validateWorkspaceOutputDirectory } from '../core/workspaceSafety';
+import { resolveMainFile } from '../core/mainFileResolver';
+import { nodeFileSystemOps } from '../core/nodeFileSystem';
+import { buildDoctorReport, DoctorWorkspaceInfo } from '../core/doctorReport';
 
 export async function doctorCommand(storagePath: string): Promise<void> {
   const channel = getOutputChannel();
   channel.clear();
   show();
 
-  channel.appendLine('=== LaTeX One-Click Doctor ===');
-  channel.appendLine('');
-
   const platform = detectPlatform();
-  channel.appendLine(`OS: ${platform.os} (${os.release()})`);
-  channel.appendLine(`Architecture: ${platform.arch}`);
-  channel.appendLine(`Platform ID: ${platform.platformId ?? 'n/a'}`);
-  channel.appendLine(`Supported: ${platform.supported && isSupportedPlatform() ? 'Yes' : 'No'}`);
-  if (platform.unsupportedReason) {
-    channel.appendLine(`Reason: ${platform.unsupportedReason}`);
-  }
-  channel.appendLine('');
-
   const manager = new RuntimeManager({ storagePath });
-  channel.appendLine(`Tectonic version: ${manager.version}`);
-  channel.appendLine(`Binary path: ${manager.binaryPath}`);
-  channel.appendLine(`Binary exists: ${fs.existsSync(manager.binaryPath)}`);
-
+  const workspace = await getDoctorWorkspaceInfo();
   const ready = await manager.isReady();
-  channel.appendLine(`Runtime ready: ${ready}`);
-  channel.appendLine('');
 
-  channel.appendLine(`VS Code version: ${vscode.version}`);
-  channel.appendLine(`Node.js version: ${process.version}`);
-  channel.appendLine('');
-  channel.appendLine('=== End Doctor ===');
+  channel.appendLine(buildDoctorReport({
+    platform,
+    osRelease: os.release(),
+    runtimeVersion: manager.version,
+    binaryPath: manager.binaryPath,
+    binaryExists: fs.existsSync(manager.binaryPath),
+    runtimeReady: ready,
+    vscodeVersion: vscode.version,
+    nodeVersion: process.version,
+    workspace,
+  }));
+}
+
+async function getDoctorWorkspaceInfo(): Promise<DoctorWorkspaceInfo> {
+  const root = getWorkspaceRoot();
+  const workspace: DoctorWorkspaceInfo = {
+    trusted: vscode.workspace.isTrusted,
+    root,
+    activeEditor: vscode.window.activeTextEditor?.document.uri.fsPath,
+  };
+
+  if (!root) {
+    return workspace;
+  }
+
+  const settings = getSettings(vscode.Uri.file(root));
+  const resolvedOutputDirectory = resolveOutputDirectory(root, settings.outputDirectory);
+
+  workspace.settings = settings;
+  workspace.resolvedOutputDirectory = resolvedOutputDirectory;
+  workspace.outputDirectoryIssue = validateWorkspaceOutputDirectory(root, resolvedOutputDirectory);
+  workspace.resolvedMainFile = await resolveMainFile({
+    workspaceRoot: root,
+    settingMainFile: settings.mainFile || undefined,
+    openEditorFile: workspace.activeEditor,
+    fs: nodeFileSystemOps,
+  });
+
+  return workspace;
 }

@@ -14,16 +14,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stage runtime extraction before replacing the cached binary or writing installed runtime metadata.
 - Handle quoted `% !TEX root` directives with trailing comments.
 - Restrict automatic main-file resolution to workspace-local `.tex` files.
+- Refuse main files that escape the workspace through symlinks.
 - Refuse compile and clean output directories that point outside the workspace or at unsafe roots.
 - Refuse output directories that escape the workspace through symlinks.
 - Escape PDF preview webview resource URLs before embedding them in module scripts.
+- Cover PDF preview HTML escaping for titles and webview resource URLs containing spaces, quotes, ampersands, and script delimiters.
 - Preserve uppercase `.TEX` filenames when computing output PDF paths.
+- Activate workspaces that contain only uppercase or mixed-case `.TEX` files.
+- Detect uppercase and mixed-case `.TEX` files in auto-compile and workspace file discovery flows.
+- Activate all contributed commands directly so no-folder or untrusted workspaces get clear support warnings instead of unavailable commands.
+- Add a VS Code CLI extension-host smoke that verifies activation, command registration, Doctor, PDF preview, and Clean in an isolated temp workspace.
+- Run an automated VSIX package-content allowlist/blocklist check during package and release flows.
+- Validate runtime manifest checksums, supported platforms, activation events, and hidden unimplemented settings during package checks.
+- Publish marketplace releases from the VSIX artifact that passed package-content checks.
+- Remove the unused compile-all command implementation from the GA package surface.
+- Expand the Doctor command to report workspace, settings, main-file, and output-directory diagnostics, including limited support in untrusted or no-folder contexts.
 - Prevent the clean command from deleting unsafe output targets.
 - Remove planned runtime-channel, telemetry, and log-verbosity settings until they have implemented behavior.
 - Exclude generated demo artifacts and website source from VSIX packaging.
 
 ### Documentation
 - Added a GA readiness checklist and updated compatibility docs for Tectonic 0.16.9.
+- Clarified marketplace privacy and security docs for telemetry, first-use runtime downloads, Tectonic package downloads, offline mode, and limited Doctor support in untrusted workspaces.
 
 ## [0.1.0] - 2024-01-01
 

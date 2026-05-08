@@ -31,12 +31,14 @@ npm test
 npm run smoke
 
 echo "==> Building VSIX"
-VSIX_FILE="$(npx vsce package --no-dependencies | tail -n1 | awk '{print $NF}')"
+VERSION="$(node -p "require('./package.json').version")"
+VSIX_FILE="latex-one-click-${VERSION}.vsix"
+npm run package --silent -- --out "$VSIX_FILE"
 echo "Built $VSIX_FILE"
 
 if [[ "$MODE" == "all" || "$MODE" == "vscode" ]]; then
   echo "==> Publishing to Visual Studio Marketplace"
-  npx vsce publish --no-dependencies
+  npx vsce publish --packagePath "$VSIX_FILE"
 fi
 
 if [[ "$MODE" == "all" || "$MODE" == "openvsx" ]]; then

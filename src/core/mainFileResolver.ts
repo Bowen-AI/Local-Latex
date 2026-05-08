@@ -1,10 +1,12 @@
 import * as path from 'path';
 import { isPathInside } from './workspaceSafety';
+import { isTexFile, TEX_FILE_REGEX } from './texFiles';
 
 export interface FileSystemOps {
   exists(filePath: string): Promise<boolean>;
   readFile(filePath: string): Promise<string>;
   findFiles(root: string, pattern: RegExp): Promise<string[]>;
+  realpath?(filePath: string): Promise<string | undefined>;
 }
 
 export interface ResolveOptions {
@@ -15,16 +17,51 @@ export interface ResolveOptions {
 }
 
 const TEX_ROOT_REGEX = /^%\s*!TEX\s+root\s*=\s*(.+)$/im;
-const TEX_FILE_REGEX = /\.tex$/i;
 
-function toWorkspaceTexPath(workspaceRoot: string, filePath: string): string | undefined {
+async function realpathIfAvailable(
+  fs: FileSystemOps,
+  filePath: string
+): Promise<string | undefined> {
+  try {
+    return await fs.realpath?.(filePath);
+  } catch {
+    return undefined;
+  }
+}
+
+async function toWorkspaceTexPath(
+  workspaceRoot: string,
+  filePath: string,
+  fs: FileSystemOps
+): Promise<string | undefined> {
   const resolved = path.resolve(filePath);
-  if (!TEX_FILE_REGEX.test(resolved)) {
+  if (!isTexFile(resolved)) {
     return undefined;
   }
   if (!isPathInside(workspaceRoot, resolved)) {
     return undefined;
   }
+
+  if (!fs.realpath) {
+    return resolved;
+  }
+
+  const exists = await fs.exists(resolved);
+  if (!exists) {
+    return resolved;
+  }
+
+  const realCandidate = await realpathIfAvailable(fs, resolved);
+  if (!realCandidate) {
+    return undefined;
+  }
+
+  const realWorkspace = await realpathIfAvailable(fs, workspaceRoot);
+  const comparisonRoot = realWorkspace ?? path.resolve(workspaceRoot);
+  if (!isPathInside(comparisonRoot, realCandidate)) {
+    return undefined;
+  }
+
   return resolved;
 }
 
@@ -59,7 +96,7 @@ export async function resolveMainFile(options: ResolveOptions): Promise<string |
     const abs = path.isAbsolute(settingMainFile)
       ? settingMainFile
       : path.resolve(workspaceRoot, settingMainFile);
-    const candidate = toWorkspaceTexPath(workspaceRoot, abs);
+    const candidate = await toWorkspaceTexPath(workspaceRoot, abs, fs);
     if (candidate && await fs.exists(candidate)) {
       return candidate;
     }
@@ -67,13 +104,13 @@ export async function resolveMainFile(options: ResolveOptions): Promise<string |
 
   // 2. TEX root directive from currently open file
   const workspaceEditorFile = openEditorFile
-    ? toWorkspaceTexPath(workspaceRoot, openEditorFile)
+    ? await toWorkspaceTexPath(workspaceRoot, openEditorFile, fs)
     : undefined;
   if (workspaceEditorFile) {
     const root = await parseTexRootDirective(workspaceEditorFile, fs);
     if (root) {
       const abs = path.isAbsolute(root) ? root : path.resolve(path.dirname(workspaceEditorFile), root);
-      const candidate = toWorkspaceTexPath(workspaceRoot, abs);
+      const candidate = await toWorkspaceTexPath(workspaceRoot, abs, fs);
       if (candidate && await fs.exists(candidate)) {
         return candidate;
       }
@@ -81,13 +118,21 @@ export async function resolveMainFile(options: ResolveOptions): Promise<string |
   }
 
   // 3. main.tex in workspace root
-  const mainTex = path.join(workspaceRoot, 'main.tex');
-  if (await fs.exists(mainTex)) {
+  const mainTex = await toWorkspaceTexPath(workspaceRoot, path.join(workspaceRoot, 'main.tex'), fs);
+  if (mainTex && await fs.exists(mainTex)) {
     return mainTex;
   }
 
   // 4. main.tex anywhere in the workspace
-  const allTex = await fs.findFiles(workspaceRoot, TEX_FILE_REGEX);
+  const foundTex = await fs.findFiles(workspaceRoot, TEX_FILE_REGEX);
+  const allTex: string[] = [];
+  for (const file of foundTex) {
+    const candidate = await toWorkspaceTexPath(workspaceRoot, file, fs);
+    if (candidate) {
+      allTex.push(candidate);
+    }
+  }
+
   const nestedMainTex = allTex.find((file) => path.basename(file).toLowerCase() === 'main.tex');
   if (nestedMainTex) {
     return nestedMainTex;

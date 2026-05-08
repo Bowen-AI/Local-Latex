@@ -1,9 +1,8 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import * as path from 'path';
 import { getSettings } from '../config/settings';
 import { getWorkspaceRoot } from '../core/projectLocator';
-import { resolveMainFile, FileSystemOps } from '../core/mainFileResolver';
+import { resolveMainFile } from '../core/mainFileResolver';
 import { compile, resolveOutputDirectory } from '../core/compiler';
 import { validateWorkspaceOutputDirectory } from '../core/workspaceSafety';
 import { applyDiagnostics } from '../core/diagnostics';
@@ -11,37 +10,7 @@ import { log } from '../core/outputChannel';
 import { setState } from '../core/stateStore';
 import { openPdf } from '../preview/pdfPreview';
 import { RuntimeManager } from '../runtime/runtimeManager';
-
-const nodeFsOps: FileSystemOps = {
-  exists: async (p) => {
-    try { fs.accessSync(p); return true; } catch { return false; }
-  },
-  readFile: async (p) => fs.readFileSync(p, 'utf-8'),
-  findFiles: async (root, pattern) => {
-    const found: string[] = [];
-    const visit = (dir: string): void => {
-      const entries = fs.readdirSync(dir, { withFileTypes: true });
-      for (const entry of entries) {
-        if (entry.name === 'node_modules' || entry.name === '.git' || entry.name === 'out') {
-          continue;
-        }
-
-        const fullPath = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-          visit(fullPath);
-          continue;
-        }
-
-        if (entry.isFile() && pattern.test(fullPath)) {
-          found.push(fullPath);
-        }
-      }
-    };
-
-    visit(root);
-    return found;
-  },
-};
+import { nodeFileSystemOps } from '../core/nodeFileSystem';
 
 export async function compileCommand(
   storagePath: string,
@@ -61,7 +30,7 @@ export async function compileCommand(
     workspaceRoot: root,
     settingMainFile: settings.mainFile || undefined,
     openEditorFile: openEditor,
-    fs: nodeFsOps,
+    fs: nodeFileSystemOps,
   });
 
   if (!mainFile) {

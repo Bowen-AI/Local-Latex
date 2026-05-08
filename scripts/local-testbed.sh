@@ -13,9 +13,12 @@ npm run typecheck
 npm run lint
 npm test
 npm run smoke
+npm run test:extension
 
 echo "==> Packaging VSIX"
-VSIX_FILE="$(npx vsce package --no-dependencies | tail -n1 | awk '{print $NF}')"
+VERSION="$(node -p "require('./package.json').version")"
+VSIX_FILE="latex-one-click-${VERSION}.vsix"
+npm run package --silent -- --out "$VSIX_FILE"
 echo "Built: $VSIX_FILE"
 
 echo

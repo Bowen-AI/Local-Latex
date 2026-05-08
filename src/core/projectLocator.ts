@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { TEX_FILE_GLOB } from './texFiles';
 
 export function getWorkspaceRoot(): string | undefined {
   const folders = vscode.workspace.workspaceFolders;
@@ -10,7 +11,7 @@ export function getWorkspaceRoot(): string | undefined {
 }
 
 export async function findTexFiles(workspaceRoot: string): Promise<string[]> {
-  const pattern = new vscode.RelativePattern(workspaceRoot, '**/*.tex');
+  const pattern = new vscode.RelativePattern(workspaceRoot, TEX_FILE_GLOB);
   const files = await vscode.workspace.findFiles(pattern, '**/node_modules/**');
   return files.map((f) => f.fsPath);
 }

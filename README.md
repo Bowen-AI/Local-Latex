@@ -17,7 +17,7 @@ LaTeX One-Click bundles the [Tectonic](https://tectonic-typesetting.github.io/) 
 - **Auto-compile on save** — optional, with configurable debounce
 - **Multi-file support** — respects `%!TEX root` directives
 - **Clean command** — removes build artifacts with one command
-- **Doctor command** — shows extension health and runtime status
+- **Doctor command** — shows runtime, workspace, settings, main-file, and output-directory health
 
 ---
 
@@ -37,7 +37,7 @@ After enabling **Settings → Pages → Build and deployment → GitHub Actions*
 ## 🚀 Quick Start
 
 1. Install the extension
-2. Open a folder containing a `.tex` file
+2. Open a folder containing a `.tex` file (`.TEX` and mixed-case extensions are also recognized)
 3. Click the **$(file-pdf) LaTeX** button in the status bar, or press `Ctrl+Shift+P` → `LaTeX: Compile Document`
 4. The PDF opens automatically beside your editor
 
@@ -48,10 +48,14 @@ npm ci
 npm run compile
 npm test
 npm run smoke
+npm run test:extension
+npm run package:check
 npm run test:local
 ```
 
 - `npm run smoke`: quick artifact sanity check.
+- `npm run test:extension`: VS Code CLI extension-host smoke for command registration, Doctor, PDF preview, and Clean. It uses a temp profile/workspace and skips when `code` is unavailable unless `LATEX_ONE_CLICK_REQUIRE_EXTENSION_HOST=1` is set.
+- `npm run package:check`: verifies the VSIX file list, release runtime manifest, activation events, and published settings against GA checks.
 - `npm run test:local`: full local test bed (quality gates + VSIX package + optional local install).
 
 ---
@@ -78,7 +82,7 @@ npm run test:local
 |---------|------|---------|-------------|
 | `latexOneClick.autoCompileOnSave` | boolean | `false` | Compile automatically on save |
 | `latexOneClick.compileDebounceMs` | number | `1000` | Debounce delay for auto-compile (ms) |
-| `latexOneClick.mainFile` | string | `""` | Main `.tex` file to compile |
+| `latexOneClick.mainFile` | string | `""` | Main TeX file to compile; `.tex` matching is case-insensitive |
 | `latexOneClick.outputDirectory` | string | `"out"` | Output directory for compiled files |
 | `latexOneClick.offlineOnly` | boolean | `false` | Use only cached packages |
 | `latexOneClick.compileTimeoutSec` | number | `60` | Compilation timeout in seconds |
@@ -117,11 +121,15 @@ See [docs/troubleshooting.md](docs/troubleshooting.md) for common issues.
 
 Run `LaTeX: Doctor` for a health check of the extension and runtime.
 
+## 🔐 Workspace Trust
+
+`LaTeX: Doctor` can run in no-folder or untrusted windows for limited diagnostics. Compile, PDF preview, clean, and root-selection commands are still activated in those contexts, but they show a trust or workspace warning and do not access project files until a trusted workspace folder is open.
+
 ---
 
 ## 🔒 Privacy
 
-No telemetry is collected. The only network request is downloading the Tectonic binary from GitHub Releases on first use. All compilation happens locally.
+No telemetry is collected. The extension downloads the Tectonic binary from official GitHub Releases on first use. During compilation, Tectonic may also download missing TeX packages unless `latexOneClick.offlineOnly` is enabled and the required packages are already cached. Compilation runs locally in the VS Code extension host.
 
 ---
 
