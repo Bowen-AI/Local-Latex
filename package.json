@@ -19,11 +19,16 @@
   "activationEvents": [
     "onLanguage:latex",
     "workspaceContains:**/*.[tT][eE][xX]",
+    "onView:latexOneClickProject",
+    "onView:latexOneClickCompile",
     "onCommand:latexOneClick.compile",
     "onCommand:latexOneClick.openPdf",
     "onCommand:latexOneClick.clean",
     "onCommand:latexOneClick.selectRoot",
-    "onCommand:latexOneClick.doctor"
+    "onCommand:latexOneClick.doctor",
+    "onCommand:latexOneClick.revealTexLocation",
+    "onCommand:latexOneClick.sidebarToggleBool",
+    "onCommand:latexOneClick.sidebarEditOutputDirectory"
   ],
   "main": "./out/extension.js",
   "capabilities": {
@@ -71,6 +76,18 @@
       {
         "command": "latexOneClick.doctor",
         "title": "LaTeX: Doctor (Show Extension Health)"
+      },
+      {
+        "command": "latexOneClick.revealTexLocation",
+        "title": "LaTeX: Reveal Source Location"
+      },
+      {
+        "command": "latexOneClick.sidebarToggleBool",
+        "title": "LaTeX: Toggle Sidebar Setting"
+      },
+      {
+        "command": "latexOneClick.sidebarEditOutputDirectory",
+        "title": "LaTeX: Edit Output Directory (Sidebar)"
       }
     ],
     "configuration": {
@@ -122,6 +139,27 @@
           "description": "Emit SyncTeX data during compile for source/PDF synchronization"
         }
       }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "latexOneClick",
+          "title": "LaTeX",
+          "icon": "resources/latex-activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "latexOneClick": [
+        {
+          "id": "latexOneClickProject",
+          "name": "Project"
+        },
+        {
+          "id": "latexOneClickCompile",
+          "name": "Compile"
+        }
+      ]
     }
   },
   "devDependencies": {

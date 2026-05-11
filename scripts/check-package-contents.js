@@ -10,6 +10,7 @@ const REQUIRED_FILES = [
   'LICENSE',
   'CHANGELOG.md',
   'resources/runtime-manifest.json',
+  'resources/latex-activity.svg',
   'out/extension.js',
   'out/commands/compile.js',
   'out/commands/clean.js',
@@ -43,6 +44,11 @@ const REQUIRED_FILES = [
   'out/runtime/paths.js',
   'out/runtime/platform.js',
   'out/runtime/runtimeManager.js',
+  'out/sidebar/compileLogLines.js',
+  'out/sidebar/compileSidebarState.js',
+  'out/sidebar/compileTreeProvider.js',
+  'out/sidebar/projectTreeProvider.js',
+  'out/sidebar/revealTexLocation.js',
   'media/pdfjs/build/pdf.mjs',
   'media/pdfjs/build/pdf.worker.mjs',
   'media/pdfjs/cmaps/LICENSE',
@@ -85,6 +91,9 @@ const REQUIRED_COMMAND_ACTIVATIONS = [
   'latexOneClick.clean',
   'latexOneClick.selectRoot',
   'latexOneClick.doctor',
+  'latexOneClick.revealTexLocation',
+  'latexOneClick.sidebarToggleBool',
+  'latexOneClick.sidebarEditOutputDirectory',
 ];
 
 const README_REQUIRED_DISCLOSURES = [

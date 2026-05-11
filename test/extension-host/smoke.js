@@ -38,6 +38,9 @@ async function run() {
     'latexOneClick.clean',
     'latexOneClick.selectRoot',
     'latexOneClick.doctor',
+    'latexOneClick.revealTexLocation',
+    'latexOneClick.sidebarToggleBool',
+    'latexOneClick.sidebarEditOutputDirectory',
   ]) {
     await assertCommandRegistered(command);
   }

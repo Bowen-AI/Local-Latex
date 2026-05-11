@@ -148,9 +148,10 @@ export function buildPdfPreviewHtml(options: PdfPreviewHtmlOptions): string {
 </head>
 <body>
   <div class="toolbar">
+    <button id="compile" title="Compile">Run</button>
     <button id="zoomOut" title="Zoom out">-</button>
     <button id="zoomIn" title="Zoom in">+</button>
-    <button id="fit" title="Fit width">Fit</button>
+    <button id="view" title="Fit to width">View</button>
     <div class="title">${title}</div>
     <div id="status">Loading</div>
   </div>
@@ -169,9 +170,32 @@ export function buildPdfPreviewHtml(options: PdfPreviewHtmlOptions): string {
 
     pdfjsLib.GlobalWorkerOptions.workerSrc = ${workerUriLiteral};
 
+    document.getElementById('compile').addEventListener('click', () => {
+      vscode.postMessage({ type: 'compile' });
+    });
     document.getElementById('zoomOut').addEventListener('click', () => setScale(Math.max(0.5, scale - 0.15)));
     document.getElementById('zoomIn').addEventListener('click', () => setScale(Math.min(3, scale + 0.15)));
-    document.getElementById('fit').addEventListener('click', () => fitWidth());
+    document.getElementById('view').addEventListener('click', () => fitWidth());
+
+    window.addEventListener(
+      'wheel',
+      (event) => {
+        if (!event.ctrlKey && !event.metaKey) {
+          return;
+        }
+        event.preventDefault();
+        let dy = event.deltaY;
+        if (event.deltaMode === 1) {
+          dy *= 16;
+        } else if (event.deltaMode === 2) {
+          dy *= window.innerHeight;
+        }
+        const stepPer100 = 0.15 / 100;
+        const next = Math.max(0.5, Math.min(3, scale - dy * stepPer100));
+        void setScale(next);
+      },
+      { passive: false }
+    );
 
     window.addEventListener('message', (event) => {
       if (event.data?.type === 'reverseSearchStatus') {

@@ -4,6 +4,7 @@ import * as path from 'path';
 import { resolveOutputDirectory } from '../core/compiler';
 import { getCurrentPdf, setCurrentPdf } from './previewState';
 import { findSyncTexTarget, PdfClick, readSyncTexDocument } from './synctex';
+import { log } from '../core/outputChannel';
 import { buildPdfPreviewHtml } from './pdfPreviewHtml';
 
 interface PreviewEntry {
@@ -55,6 +56,13 @@ export async function openPdf(
 
   panel.webview.html = buildWebviewHtml(panel.webview, extensionUri, pdfPath);
   panel.webview.onDidReceiveMessage((message: { type?: string; payload?: PdfClick }) => {
+    if (message.type === 'compile') {
+      void Promise.resolve(vscode.commands.executeCommand('latexOneClick.compile')).catch((error: unknown) => {
+        const text = error instanceof Error ? error.message : String(error);
+        log(`Preview toolbar compile failed: ${text}`);
+      });
+      return;
+    }
     if (message.type === 'reverseSearch' && message.payload) {
       handleReverseSearch(entry, message.payload).catch((error: unknown) => {
         const text = error instanceof Error ? error.message : String(error);

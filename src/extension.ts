@@ -14,6 +14,14 @@ import { updateCurrentPdfView } from './preview/previewState';
 import { disposePdfPreviews } from './preview/pdfPreview';
 import { isTexFile } from './core/texFiles';
 import { formatWorkspaceAccessWarning, getTrustedWorkspaceBlockReason } from './core/workspaceAccess';
+import { onCompileSnapshotUpdated } from './sidebar/compileSidebarState';
+import { CompileTreeProvider } from './sidebar/compileTreeProvider';
+import {
+  ProjectTreeProvider,
+  sidebarEditOutputDirectoryCommand,
+  sidebarToggleBoolCommand,
+} from './sidebar/projectTreeProvider';
+import { revealTexLocationCommand } from './sidebar/revealTexLocation';
 
 let statusBar: vscode.StatusBarItem | undefined;
 let trustedWorkspaceFeaturesInitialized = false;
@@ -22,7 +30,30 @@ const disposables: vscode.Disposable[] = [];
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const storagePath = context.globalStorageUri.fsPath;
 
+  const projectTreeProvider = new ProjectTreeProvider();
+  const compileTreeProvider = new CompileTreeProvider();
+
   context.subscriptions.push(
+    vscode.window.registerTreeDataProvider('latexOneClickProject', projectTreeProvider),
+    vscode.window.registerTreeDataProvider('latexOneClickCompile', compileTreeProvider),
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration('latexOneClick')) {
+        projectTreeProvider.refresh();
+      }
+    }),
+    onCompileSnapshotUpdated(() => {
+      compileTreeProvider.refresh();
+    }),
+    vscode.workspace.onDidChangeWorkspaceFolders(() => {
+      projectTreeProvider.refresh();
+      compileTreeProvider.refresh();
+    }),
+    vscode.window.onDidChangeActiveTextEditor(() => {
+      projectTreeProvider.refresh();
+    }),
+    vscode.commands.registerCommand('latexOneClick.revealTexLocation', revealTexLocationCommand),
+    vscode.commands.registerCommand('latexOneClick.sidebarToggleBool', sidebarToggleBoolCommand),
+    vscode.commands.registerCommand('latexOneClick.sidebarEditOutputDirectory', sidebarEditOutputDirectoryCommand),
     vscode.commands.registerCommand('latexOneClick.doctor', () => doctorCommand(storagePath)),
     vscode.commands.registerCommand('latexOneClick.compile', () =>
       runTrustedWorkspaceCommand(() => compileCommand(storagePath, ensureStatusBar(context), context.extensionUri))
@@ -33,6 +64,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.commands.registerCommand('latexOneClick.clean', () => runTrustedWorkspaceCommand(cleanCommand)),
     vscode.commands.registerCommand('latexOneClick.selectRoot', () => runTrustedWorkspaceCommand(selectRootCommand)),
     vscode.workspace.onDidGrantWorkspaceTrust(() => {
+      projectTreeProvider.refresh();
+      compileTreeProvider.refresh();
       initializeTrustedWorkspaceFeatures(context, storagePath).catch((error) => {
         const message = error instanceof Error ? error.message : String(error);
         log(`Failed to initialize trusted workspace features after trust grant: ${message}`);

@@ -27,6 +27,9 @@ const REQUIRED_COMMAND_ACTIVATIONS = [
   'latexOneClick.clean',
   'latexOneClick.selectRoot',
   'latexOneClick.doctor',
+  'latexOneClick.revealTexLocation',
+  'latexOneClick.sidebarToggleBool',
+  'latexOneClick.sidebarEditOutputDirectory',
 ];
 const README_REQUIRED_DISCLOSURES = [
   ['telemetry disclosure', /No telemetry is collected/i],

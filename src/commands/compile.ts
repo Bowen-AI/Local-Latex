@@ -11,6 +11,7 @@ import { setState } from '../core/stateStore';
 import { openPdf } from '../preview/pdfPreview';
 import { RuntimeManager } from '../runtime/runtimeManager';
 import { nodeFileSystemOps } from '../core/nodeFileSystem';
+import { captureCompileSnapshot } from '../sidebar/compileSidebarState';
 
 export async function compileCommand(
   storagePath: string,
@@ -109,6 +110,7 @@ export async function compileCommand(
         });
 
         applyDiagnostics(result.logs, root);
+        captureCompileSnapshot(root, result);
 
         if (result.timedOut) {
           statusBar.text = '$(error) Compile timed out';

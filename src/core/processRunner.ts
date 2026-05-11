@@ -30,11 +30,19 @@ export async function runProcess(options: ProcessOptions): Promise<ProcessResult
     let timer: NodeJS.Timeout | undefined;
     let killTimer: NodeJS.Timeout | undefined;
 
+    const safeKill = (signal: NodeJS.Signals): void => {
+      try {
+        proc.kill(signal);
+      } catch {
+        // Ignore kill failures (e.g. EACCES in restricted sandboxes).
+      }
+    };
+
     const terminate = (): void => {
       if (killTimer) return;
-      proc.kill('SIGTERM');
+      safeKill('SIGTERM');
       killTimer = setTimeout(() => {
-        proc.kill('SIGKILL');
+        safeKill('SIGKILL');
       }, 2000);
     };
 
@@ -91,11 +99,16 @@ export async function runProcess(options: ProcessOptions): Promise<ProcessResult
     });
 
     proc.on('error', (err) => {
+      const stderrText = stderr.join('');
+      const merged =
+        stderrText && err.message
+          ? `${stderrText}\n${err.message}`
+          : stderrText || err.message;
       finish({
         exitCode: 1,
         stdout: stdout.join(''),
-        stderr: err.message,
-        timedOut: false,
+        stderr: merged,
+        timedOut,
       });
     });
   });
