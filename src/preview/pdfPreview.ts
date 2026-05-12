@@ -6,14 +6,27 @@ import { getCurrentPdf, setCurrentPdf } from './previewState';
 import { findSyncTexTarget, PdfClick, readSyncTexDocument } from './synctex';
 import { log } from '../core/outputChannel';
 import { buildPdfPreviewHtml } from './pdfPreviewHtml';
+import { computeStablePdfFingerprint } from './pdfFingerprint';
 
 interface PreviewEntry {
   panel: vscode.WebviewPanel;
+  pdfFingerprint?: string;
   pdfPath: string;
+  pdfUri: string;
   workspaceFolder: string;
 }
 
+export interface PdfPreviewPerfEvent {
+  pdfPath: string;
+  phase: string;
+  totalMs?: number;
+  pageCount?: number;
+}
+
 const previews = new Map<string, PreviewEntry>();
+const pdfPreviewPerfEmitter = new vscode.EventEmitter<PdfPreviewPerfEvent>();
+
+export const onPdfPreviewPerf = pdfPreviewPerfEmitter.event;
 
 export async function openPdf(
   pdfPath: string,
@@ -27,10 +40,28 @@ export async function openPdf(
 
   const existing = previews.get(workspaceFolder);
   if (existing) {
-    existing.pdfPath = pdfPath;
-    existing.panel.title = `PDF: ${path.basename(pdfPath)}`;
-    existing.panel.webview.html = buildWebviewHtml(existing.panel.webview, extensionUri, pdfPath);
+    const pdfFileName = path.basename(pdfPath);
+    const nextPdfFingerprint = await computePdfFingerprint(pdfPath);
+    const nextPdfUri = buildPdfWebviewUri(existing.panel.webview, pdfPath, nextPdfFingerprint);
+    existing.panel.title = `PDF: ${pdfFileName}`;
     existing.panel.reveal(vscode.ViewColumn.Beside, preserveFocus);
+
+    if (existing.pdfPath === pdfPath && existing.pdfFingerprint === nextPdfFingerprint) {
+      return;
+    }
+
+    existing.pdfFingerprint = nextPdfFingerprint;
+    existing.pdfPath = pdfPath;
+    existing.pdfUri = nextPdfUri;
+
+    const posted = await existing.panel.webview.postMessage({
+      type: 'reloadPdf',
+      pdfUri: nextPdfUri,
+      pdfFileName,
+    });
+    if (!posted) {
+      existing.panel.webview.html = buildWebviewHtml(existing.panel.webview, extensionUri, pdfPath, nextPdfUri);
+    }
     return;
   }
 
@@ -46,16 +77,18 @@ export async function openPdf(
       retainContextWhenHidden: true,
       localResourceRoots: [
         vscode.Uri.joinPath(extensionUri, 'media'),
-        vscode.Uri.file(path.dirname(pdfPath)),
+        vscode.Uri.file(workspaceFolder),
       ],
     }
   );
 
-  const entry: PreviewEntry = { panel, pdfPath, workspaceFolder };
+  const initialPdfUri = buildStatPdfWebviewUri(panel.webview, pdfPath);
+  const entry: PreviewEntry = { panel, pdfPath, pdfUri: initialPdfUri, workspaceFolder };
   previews.set(workspaceFolder, entry);
+  refreshPdfFingerprint(entry, pdfPath);
 
-  panel.webview.html = buildWebviewHtml(panel.webview, extensionUri, pdfPath);
-  panel.webview.onDidReceiveMessage((message: { type?: string; payload?: PdfClick }) => {
+  panel.webview.html = buildWebviewHtml(panel.webview, extensionUri, pdfPath, initialPdfUri);
+  panel.webview.onDidReceiveMessage((message: { type?: string; payload?: unknown }) => {
     if (message.type === 'compile') {
       void Promise.resolve(vscode.commands.executeCommand('latexOneClick.compile')).catch((error: unknown) => {
         const text = error instanceof Error ? error.message : String(error);
@@ -63,7 +96,11 @@ export async function openPdf(
       });
       return;
     }
-    if (message.type === 'reverseSearch' && message.payload) {
+    if (message.type === 'previewPerf') {
+      logPreviewPerf(entry.pdfPath, message.payload);
+      return;
+    }
+    if (message.type === 'reverseSearch' && isPdfClick(message.payload)) {
       handleReverseSearch(entry, message.payload).catch((error: unknown) => {
         const text = error instanceof Error ? error.message : String(error);
         void vscode.window.showWarningMessage(`LaTeX One-Click: ${text}`);
@@ -71,6 +108,69 @@ export async function openPdf(
     }
   });
   panel.onDidDispose(() => previews.delete(workspaceFolder));
+}
+
+function refreshPdfFingerprint(entry: PreviewEntry, pdfPath: string): void {
+  computePdfFingerprint(pdfPath)
+    .then((fingerprint) => {
+      if (entry.pdfPath === pdfPath) {
+        entry.pdfFingerprint = fingerprint;
+      }
+    })
+    .catch((error: unknown) => {
+      const text = error instanceof Error ? error.message : String(error);
+      log(`PDF preview fingerprint failed: ${text}`);
+    });
+}
+
+function isPdfClick(value: unknown): value is PdfClick {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const candidate = value as Partial<Record<keyof PdfClick, unknown>>;
+  return (
+    typeof candidate.page === 'number' &&
+    typeof candidate.pdfX === 'number' &&
+    typeof candidate.pdfY === 'number' &&
+    typeof candidate.pageHeight === 'number'
+  );
+}
+
+function logPreviewPerf(pdfPath: string, payload: unknown): void {
+  if (!payload || typeof payload !== 'object') {
+    return;
+  }
+
+  const data = payload as {
+    phase?: unknown;
+    totalMs?: unknown;
+    pageCount?: unknown;
+    stages?: unknown;
+    error?: unknown;
+  };
+  const phase = typeof data.phase === 'string' ? data.phase : 'event';
+  const totalMs = typeof data.totalMs === 'number' ? Math.round(data.totalMs) : undefined;
+  const pageCountValue = typeof data.pageCount === 'number' ? data.pageCount : undefined;
+  const total = totalMs !== undefined ? ` in ${totalMs}ms` : '';
+  const pageCount = pageCountValue !== undefined ? `, pages=${pageCountValue}` : '';
+  const error = typeof data.error === 'string' ? `, error=${data.error}` : '';
+  const stages =
+    data.stages && typeof data.stages === 'object'
+      ? Object.entries(data.stages as Record<string, unknown>)
+          .filter(([, value]) => typeof value === 'number')
+          .map(([key, value]) => `${key}=${Math.round(value as number)}ms`)
+          .join(', ')
+      : '';
+  const stageText = stages ? ` (${stages})` : '';
+
+  pdfPreviewPerfEmitter.fire({
+    pdfPath,
+    phase,
+    totalMs,
+    pageCount: pageCountValue,
+  });
+  log(`PDF preview ${phase}${total}: ${path.basename(pdfPath)}${pageCount}${error}${stageText}`);
 }
 
 function buildPdfOpenUri(pdfPath: string, currentPdf: string | undefined): vscode.Uri {
@@ -140,11 +240,16 @@ async function handleReverseSearch(entry: PreviewEntry, click: PdfClick): Promis
   });
 }
 
-function buildWebviewHtml(webview: vscode.Webview, extensionUri: vscode.Uri, pdfPath: string): string {
+function buildWebviewHtml(
+  webview: vscode.Webview,
+  extensionUri: vscode.Uri,
+  pdfPath: string,
+  pdfUri: string
+): string {
   return buildPdfPreviewHtml({
     cspSource: webview.cspSource,
     pdfFileName: path.basename(pdfPath),
-    pdfUri: webview.asWebviewUri(vscode.Uri.file(pdfPath)).toString(),
+    pdfUri,
     pdfJsUri: webview
       .asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'pdfjs', 'build', 'pdf.mjs'))
       .toString(),
@@ -156,4 +261,24 @@ function buildWebviewHtml(webview: vscode.Webview, extensionUri: vscode.Uri, pdf
       .asWebviewUri(vscode.Uri.joinPath(extensionUri, 'media', 'pdfjs', 'standard_fonts'))
       .toString(),
   });
+}
+
+function buildStatPdfWebviewUri(webview: vscode.Webview, pdfPath: string): string {
+  let version = String(Date.now());
+  try {
+    const stat = fs.statSync(pdfPath);
+    version = `${Math.trunc(stat.mtimeMs * 1000)}-${Math.trunc(stat.ctimeMs * 1000)}-${stat.size}`;
+  } catch {
+    // Date.now() is enough to avoid reusing a stale webview resource URL.
+  }
+
+  return buildPdfWebviewUri(webview, pdfPath, version);
+}
+
+async function computePdfFingerprint(pdfPath: string): Promise<string> {
+  return computeStablePdfFingerprint(pdfPath);
+}
+
+function buildPdfWebviewUri(webview: vscode.Webview, pdfPath: string, version: string): string {
+  return webview.asWebviewUri(vscode.Uri.file(pdfPath).with({ query: `v=${version}` })).toString();
 }

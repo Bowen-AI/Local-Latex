@@ -9,8 +9,10 @@ type CompileGroupId = 'errors' | 'warnings' | 'log';
 
 export type CompileTreeElement =
   | { kind: 'hint'; text: string }
-  | { kind: 'group'; id: CompileGroupId }
+  | { kind: 'summary'; text: string; success?: boolean; timedOut?: boolean; finishedAtMs?: number }
+  | { kind: 'group'; id: CompileGroupId; count?: number; hasSnapshot: boolean }
   | { kind: 'diag'; entry: LogEntry }
+  | { kind: 'empty'; text: string }
   | { kind: 'logLine'; text: string };
 
 const GROUP_LABEL: Record<CompileGroupId, string> = {
@@ -37,12 +39,27 @@ export class CompileTreeProvider implements vscode.TreeDataProvider<CompileTreeE
     if (element.kind === 'hint') {
       return new vscode.TreeItem(element.text, vscode.TreeItemCollapsibleState.None);
     }
+    if (element.kind === 'summary') {
+      const item = new vscode.TreeItem(element.text, vscode.TreeItemCollapsibleState.None);
+      item.iconPath = new vscode.ThemeIcon(
+        element.timedOut ? 'watch' : element.success === undefined ? 'info' : element.success ? 'check' : 'error'
+      );
+      if (element.finishedAtMs) {
+        item.description = new Date(element.finishedAtMs).toLocaleTimeString();
+      }
+      return item;
+    }
     if (element.kind === 'group') {
       const item = new vscode.TreeItem(
         GROUP_LABEL[element.id],
-        vscode.TreeItemCollapsibleState.Collapsed
+        element.id === 'log'
+          ? vscode.TreeItemCollapsibleState.Collapsed
+          : vscode.TreeItemCollapsibleState.Expanded
       );
       item.iconPath = new vscode.ThemeIcon(GROUP_ICON[element.id]);
+      if (element.id !== 'log') {
+        item.description = element.hasSnapshot ? String(element.count ?? 0) : '0';
+      }
       return item;
     }
     if (element.kind === 'diag') {
@@ -60,6 +77,11 @@ export class CompileTreeProvider implements vscode.TreeDataProvider<CompileTreeE
           arguments: [root, entry.file, entry.line, entry.column],
         };
       }
+      return item;
+    }
+    if (element.kind === 'empty') {
+      const item = new vscode.TreeItem(element.text, vscode.TreeItemCollapsibleState.None);
+      item.iconPath = new vscode.ThemeIcon('circle-slash');
       return item;
     }
     const item = new vscode.TreeItem(element.text, vscode.TreeItemCollapsibleState.None);
@@ -82,11 +104,22 @@ export class CompileTreeProvider implements vscode.TreeDataProvider<CompileTreeE
       return [{ kind: 'hint', text: hint }];
     }
 
+    const snap = root ? getCompileSnapshot(root) : undefined;
+
     if (!element) {
+      const errors = snap?.logs.filter((e) => e.severity === 'error') ?? [];
+      const warnings = snap?.logs.filter((e) => e.severity === 'warning') ?? [];
       return [
-        { kind: 'group', id: 'errors' },
-        { kind: 'group', id: 'warnings' },
-        { kind: 'group', id: 'log' },
+        {
+          kind: 'summary',
+          text: snap?.summary ?? 'No compile output yet. Run Compile.',
+          success: snap?.success,
+          timedOut: snap?.timedOut,
+          finishedAtMs: snap?.finishedAtMs,
+        },
+        { kind: 'group', id: 'errors', count: errors.length, hasSnapshot: Boolean(snap) },
+        { kind: 'group', id: 'warnings', count: warnings.length, hasSnapshot: Boolean(snap) },
+        { kind: 'group', id: 'log', hasSnapshot: Boolean(snap) },
       ];
     }
 
@@ -94,15 +127,19 @@ export class CompileTreeProvider implements vscode.TreeDataProvider<CompileTreeE
       return [];
     }
 
-    const snap = root ? getCompileSnapshot(root) : undefined;
-
     if (element.id === 'errors') {
       const entries = snap?.logs.filter((e) => e.severity === 'error') ?? [];
+      if (entries.length === 0) {
+        return [{ kind: 'empty', text: snap ? 'No errors' : 'No compile output yet.' }];
+      }
       return entries.map((e) => ({ kind: 'diag', entry: e }));
     }
 
     if (element.id === 'warnings') {
       const entries = snap?.logs.filter((e) => e.severity === 'warning') ?? [];
+      if (entries.length === 0) {
+        return [{ kind: 'empty', text: snap ? 'No warnings' : 'No compile output yet.' }];
+      }
       return entries.map((e) => ({ kind: 'diag', entry: e }));
     }
 

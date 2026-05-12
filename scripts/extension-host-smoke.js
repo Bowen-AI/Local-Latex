@@ -27,12 +27,25 @@ function findExecutable(name) {
   return undefined;
 }
 
-function findVsCodeCli() {
-  if (process.env.VSCODE_CLI) {
-    return process.env.VSCODE_CLI;
+function normalizeVsCodeCli(candidate) {
+  if (!candidate) {
+    return undefined;
   }
 
-  return findExecutable('code') ?? findExecutable('code-insiders');
+  const snapCli = '/snap/code/current/usr/share/code/bin/code';
+  if (process.platform === 'linux' && candidate === '/snap/bin/code' && fs.existsSync(snapCli)) {
+    return snapCli;
+  }
+
+  return candidate;
+}
+
+function findVsCodeCli() {
+  if (process.env.VSCODE_CLI && fs.existsSync(process.env.VSCODE_CLI)) {
+    return normalizeVsCodeCli(process.env.VSCODE_CLI);
+  }
+
+  return normalizeVsCodeCli(findExecutable('code')) ?? normalizeVsCodeCli(findExecutable('code-insiders'));
 }
 
 function getPlatformId() {
@@ -59,11 +72,35 @@ function createWorkspace(root) {
       '',
     ].join('\n')
   );
-  fs.writeFileSync(
-    path.join(outDir, 'main.pdf'),
-    '%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n%%EOF\n'
-  );
+  fs.writeFileSync(path.join(outDir, 'main.pdf'), createMinimalPdf('Extension host smoke test.'));
   return workspace;
+}
+
+function createMinimalPdf(text) {
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>',
+    `<< /Length ${Buffer.byteLength(`BT /F1 12 Tf 36 120 Td (${text}) Tj ET`, 'utf8')} >>\nstream\nBT /F1 12 Tf 36 120 Td (${text}) Tj ET\nendstream`,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+  ];
+  const chunks = ['%PDF-1.4\n'];
+  const offsets = [0];
+
+  for (let i = 0; i < objects.length; i += 1) {
+    offsets.push(Buffer.byteLength(chunks.join(''), 'utf8'));
+    chunks.push(`${i + 1} 0 obj\n${objects[i]}\nendobj\n`);
+  }
+
+  const xrefOffset = Buffer.byteLength(chunks.join(''), 'utf8');
+  chunks.push(`xref\n0 ${objects.length + 1}\n`);
+  chunks.push('0000000000 65535 f \n');
+  for (const offset of offsets.slice(1)) {
+    chunks.push(`${String(offset).padStart(10, '0')} 00000 n \n`);
+  }
+  chunks.push(`trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`);
+
+  return chunks.join('');
 }
 
 function seedRuntime(userDataDir) {

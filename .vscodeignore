@@ -18,5 +18,10 @@ coverage/**
 *.test.ts
 *.test.js
 out/**/*.d.ts
+out/**/*.aux
+out/**/*.log
+out/**/*.out
+out/**/*.pdf
+out/**/*.synctex.gz
 !package.json
 !resources/**

@@ -31,6 +31,12 @@ The file must have language ID `latex` or end with `.tex` using any casing, such
 Increase `latexOneClick.compileTimeoutSec` (default: 60).
 Large documents or first-run package downloads may take longer.
 
+## Compile is slow on a small document
+
+Tectonic downloads missing TeX resource files on demand. A small document can still feel slow the first time if it needs uncached files, or if network access is blocked and Tectonic retries package fetches.
+Watch the compile progress and the Errors & Warnings view for package-download messages.
+Enable `latexOneClick.offlineOnly` when you want cached-only compiles to fail fast instead of waiting on network retries.
+
 ## Compile fails with "Invalid output directory"
 
 Set `latexOneClick.outputDirectory` to a folder inside the current workspace, such as `out` or `build/latex`.

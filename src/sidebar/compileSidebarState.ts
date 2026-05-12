@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import type { CompileResult } from '../core/compiler';
 import type { LogEntry } from '../core/logParser';
+import { hasTectonicFetchFailure, hasTectonicPackageDownload } from '../core/tectonicProgress';
 
 export interface CompileSnapshot {
   finishedAtMs: number;
@@ -22,11 +23,16 @@ export function getCompileSnapshot(workspaceRoot: string): CompileSnapshot | und
 }
 
 function buildSnapshotSummary(result: CompileResult): string {
+  const output = result.stdout + result.stderr;
   if (result.timedOut) {
     return 'Timed out';
   }
   if (result.success) {
-    return `Compiled in ${(result.durationMs / 1000).toFixed(1)}s`;
+    const suffix = hasTectonicPackageDownload(output) ? ' (fetched TeX packages)' : '';
+    return `Compiled in ${(result.durationMs / 1000).toFixed(1)}s${suffix}`;
+  }
+  if (hasTectonicFetchFailure(output)) {
+    return 'TeX package download failed';
   }
   const firstErr = result.logs.find((e) => e.severity === 'error');
   const tail = result.stderr.trim() || result.stdout.trim();

@@ -12,6 +12,7 @@ import { openPdf } from '../preview/pdfPreview';
 import { RuntimeManager } from '../runtime/runtimeManager';
 import { nodeFileSystemOps } from '../core/nodeFileSystem';
 import { captureCompileSnapshot } from '../sidebar/compileSidebarState';
+import { summarizeTectonicProgress } from '../core/tectonicProgress';
 
 export async function compileCommand(
   storagePath: string,
@@ -94,8 +95,27 @@ export async function compileCommand(
         title: 'LaTeX: Compiling...',
         cancellable: true,
       },
-      async (_progress, token) => {
+      async (progress, token) => {
         token.onCancellationRequested(() => abortController.abort());
+        let sawPackageDownload = false;
+        let sawFetchFailure = false;
+
+        const handleOutput = (data: string): void => {
+          log(data);
+          const update = summarizeTectonicProgress(data);
+          if (!update) {
+            return;
+          }
+
+          progress.report({ message: update.message });
+          if (update.kind === 'download') {
+            sawPackageDownload = true;
+            statusBar.text = '$(cloud-download) Downloading TeX packages...';
+            statusBar.show();
+          } else if (update.kind === 'warning') {
+            sawFetchFailure = true;
+          }
+        };
 
         const result = await compile({
           binaryPath: manager.binaryPath,
@@ -106,7 +126,7 @@ export async function compileCommand(
           offlineOnly: settings.offlineOnly,
           synctex: settings.syncTeX,
           signal: abortController.signal,
-          onOutput: log,
+          onOutput: handleOutput,
         });
 
         applyDiagnostics(result.logs, root);
@@ -123,6 +143,9 @@ export async function compileCommand(
           statusBar.text = `$(check) Compiled in ${(result.durationMs / 1000).toFixed(1)}s`;
           setState(root, { status: 'success', lastBuilt: new Date(), outputFile: result.outputPdf });
           log(`Compiled successfully in ${result.durationMs}ms`);
+          if (sawPackageDownload) {
+            log('Tectonic fetched TeX packages during this compile; subsequent cached compiles should be faster.');
+          }
 
           if (settings.previewAutoOpen && result.outputPdf) {
             await openPdf(result.outputPdf, root, settings.previewPreserveFocus, extensionUri);
@@ -132,7 +155,10 @@ export async function compileCommand(
           setState(root, { status: 'error', lastError: result.stderr });
           const errors = result.logs.filter((e) => e.severity === 'error');
           const msg = errors[0]?.message ?? (result.stderr.trim() || 'Unknown error');
-          await vscode.window.showErrorMessage(`LaTeX One-Click: Compile failed: ${msg}`);
+          const packageHint = sawFetchFailure
+            ? ' Tectonic was fetching missing TeX packages; check network access or enable Offline only for fast cached-only compiles.'
+            : '';
+          await vscode.window.showErrorMessage(`LaTeX One-Click: Compile failed: ${msg}${packageHint}`);
         }
       }
     );

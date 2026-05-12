@@ -35,6 +35,7 @@ const REQUIRED_FILES = [
   'out/core/workspaceAccess.js',
   'out/core/workspaceSafety.js',
   'out/preview/htmlEscaping.js',
+  'out/preview/pdfFingerprint.js',
   'out/preview/pdfPreviewHtml.js',
   'out/preview/pdfPreview.js',
   'out/preview/previewState.js',

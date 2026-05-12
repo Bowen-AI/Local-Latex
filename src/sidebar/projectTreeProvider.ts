@@ -30,6 +30,7 @@ const TOGGLE_LABEL: Record<SidebarToggleKey, string> = {
 
 export type ProjectTreeElement =
   | { kind: 'hint'; text: string }
+  | { kind: 'group'; id: 'advanced'; title: string }
   | { kind: 'action'; command: string; title: string; iconId: string }
   | { kind: 'mainFile'; relativeDisplay: string }
   | { kind: 'outputDir'; value: string }
@@ -46,6 +47,11 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectTreeE
   getTreeItem(element: ProjectTreeElement): vscode.TreeItem {
     if (element.kind === 'hint') {
       const item = new vscode.TreeItem(element.text, vscode.TreeItemCollapsibleState.None);
+      return item;
+    }
+    if (element.kind === 'group') {
+      const item = new vscode.TreeItem(element.title, vscode.TreeItemCollapsibleState.Collapsed);
+      item.iconPath = new vscode.ThemeIcon('settings-gear');
       return item;
     }
     if (element.kind === 'action') {
@@ -83,7 +89,7 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectTreeE
   }
 
   async getChildren(element?: ProjectTreeElement): Promise<ProjectTreeElement[]> {
-    if (element) {
+    if (element && element.kind !== 'group') {
       return [];
     }
 
@@ -96,6 +102,14 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectTreeE
     if (blockReason) {
       const hint = !root ? 'Open a workspace folder' : 'Open a trusted workspace folder';
       return [{ kind: 'hint', text: hint }];
+    }
+
+    if (!element) {
+      return [
+        { kind: 'action', command: 'latexOneClick.compile', title: 'Compile document', iconId: 'play' },
+        { kind: 'action', command: 'latexOneClick.openPdf', title: 'Open PDF preview', iconId: 'file-pdf' },
+        { kind: 'group', id: 'advanced', title: 'Advanced' },
+      ];
     }
 
     const workspacePath = root!;
@@ -144,13 +158,11 @@ export class ProjectTreeProvider implements vscode.TreeDataProvider<ProjectTreeE
     }));
 
     return [
-      { kind: 'action', command: 'latexOneClick.compile', title: 'Compile', iconId: 'play' },
-      { kind: 'action', command: 'latexOneClick.openPdf', title: 'Open PDF preview', iconId: 'file-pdf' },
-      { kind: 'action', command: 'latexOneClick.clean', title: 'Clean', iconId: 'trash' },
-      { kind: 'action', command: 'latexOneClick.doctor', title: 'Doctor', iconId: 'wrench' },
       { kind: 'mainFile', relativeDisplay: relativeMain },
       { kind: 'outputDir', value: settings.outputDirectory || '(default)' },
       ...toggles,
+      { kind: 'action', command: 'latexOneClick.clean', title: 'Clean build artifacts', iconId: 'trash' },
+      { kind: 'action', command: 'latexOneClick.doctor', title: 'Doctor', iconId: 'wrench' },
     ];
   }
 }

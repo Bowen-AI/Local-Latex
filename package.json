@@ -1,7 +1,7 @@
 {
   "name": "latex-one-click",
   "displayName": "LaTeX One-Click",
-  "description": "Compile LaTeX to PDF locally with no separate TeX installation",
+  "description": "Compile LaTeX to PDF locally with bundled Tectonic and a built-in PDF preview",
   "version": "0.1.0",
   "publisher": "latex-one-click",
   "repository": {
@@ -144,7 +144,7 @@
       "activitybar": [
         {
           "id": "latexOneClick",
-          "title": "LaTeX",
+          "title": "LaTeX One-Click",
           "icon": "resources/latex-activity.svg"
         }
       ]
@@ -153,11 +153,11 @@
       "latexOneClick": [
         {
           "id": "latexOneClickProject",
-          "name": "Project"
+          "name": "Settings"
         },
         {
           "id": "latexOneClickCompile",
-          "name": "Compile"
+          "name": "Errors & Warnings"
         }
       ]
     }
