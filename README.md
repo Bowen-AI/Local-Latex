@@ -25,19 +25,19 @@ LaTeX One-Click fits workflows in VS Code, Cursor, and similar editors where you
 
 ## Interface overview
 
-Schematic illustrations (appearance depends on your editor theme):
+Schematic illustrations (appearance depends on your editor theme). Raster **PNG** images are used here because the Visual Studio Marketplace does not allow **SVG** in extension READMEs; vector sources live under `website/assets/`.
 
 **Command Palette — LaTeX commands**
 
-![LaTeX commands in the Command Palette](website/assets/gui-command-palette.svg)
+![LaTeX commands in the Command Palette](resources/readme/gui-command-palette.png)
 
 **Editor — PDF preview beside source**
 
-![PDF preview beside the editor](website/assets/gui-pdf-preview.svg)
+![PDF preview beside the editor](resources/readme/gui-pdf-preview.png)
 
 **Status bar — compile control**
 
-![Compile control in the status bar](website/assets/gui-status-bar.svg)
+![Compile control in the status bar](resources/readme/gui-status-bar.png)
 
 ## PDF preview and SyncTeX
 
