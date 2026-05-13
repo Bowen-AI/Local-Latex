@@ -1,8 +1,8 @@
 {
   "name": "latex-one-click",
   "displayName": "LaTeX One-Click",
-  "description": "Compile LaTeX to PDF locally with bundled Tectonic and a built-in PDF preview",
-  "version": "0.1.0",
+  "description": "Compile LaTeX locally in VS Code with Tectonic: no full TeX distribution required, on-demand packages, integrated PDF preview with SyncTeX navigation from PDF to source. Open source.",
+  "version": "0.1.1",
   "publisher": "BowenAI",
   "repository": {
     "type": "git",
@@ -11,6 +11,21 @@
   "engines": {
     "vscode": "^1.85.0"
   },
+  "keywords": [
+    "latex",
+    "tectonic",
+    "pdf",
+    "synctex",
+    "compile",
+    "typesetting",
+    "local",
+    "privacy",
+    "opensource",
+    "cursor",
+    "research",
+    "paper",
+    "thesis"
+  ],
   "type": "commonjs",
   "categories": [
     "Programming Languages",
@@ -137,6 +152,16 @@
           "type": "boolean",
           "default": true,
           "description": "Emit SyncTeX data during compile for source/PDF synchronization"
+        },
+        "latexOneClick.tectonicPrint": {
+          "type": "boolean",
+          "default": false,
+          "description": "Pass --print to Tectonic so BibTeX and full engine output appear in the LaTeX One-Click output channel"
+        },
+        "latexOneClick.tectonicKeepLogs": {
+          "type": "boolean",
+          "default": false,
+          "description": "Pass --keep-logs to Tectonic to retain intermediate log files under the output directory"
         }
       }
     },

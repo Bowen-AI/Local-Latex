@@ -34,6 +34,25 @@ describe('compiler args', () => {
     ]);
   });
 
+  it('adds --print and --keep-logs when Tectonic diagnostic flags are enabled', () => {
+    const args = buildCompileArgs({
+      outputDirectory: 'out',
+      offlineOnly: false,
+      mainFile: '/workspace/main.tex',
+      synctex: false,
+      tectonicPrint: true,
+      tectonicKeepLogs: true,
+    });
+
+    expect(args).toEqual([
+      '--outdir',
+      'out',
+      '--print',
+      '--keep-logs',
+      '/workspace/main.tex',
+    ]);
+  });
+
   it('resolves relative output directories inside the workspace', () => {
     expect(resolveOutputDirectory('/workspace', 'out')).toBe('/workspace/out');
   });

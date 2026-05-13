@@ -34,6 +34,8 @@ function settings(overrides = {}) {
     previewAutoOpen: true,
     previewPreserveFocus: true,
     syncTeX: true,
+    tectonicPrint: false,
+    tectonicKeepLogs: false,
     ...overrides,
   };
 }
@@ -69,6 +71,8 @@ describe('doctorReport', () => {
     expect(report).toContain('Output directory safe: Yes');
     expect(report).toContain('Offline only: Yes');
     expect(report).toContain('SyncTeX: Yes');
+    expect(report).toContain('Tectonic --print: No');
+    expect(report).toContain('Tectonic --keep-logs: No');
   });
 
   it('surfaces unsupported platforms and unsafe output directories', () => {

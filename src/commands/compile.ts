@@ -125,6 +125,8 @@ export async function compileCommand(
           timeoutMs: settings.compileTimeoutSec * 1000,
           offlineOnly: settings.offlineOnly,
           synctex: settings.syncTeX,
+          tectonicPrint: settings.tectonicPrint,
+          tectonicKeepLogs: settings.tectonicKeepLogs,
           signal: abortController.signal,
           onOutput: handleOutput,
         });

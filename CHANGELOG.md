@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+
 - Reject unsupported Linux arm64 and Windows arm64 platforms instead of falling back to x64 runtime downloads.
 - Report runtime setup failures through the compile command instead of letting download/extraction errors escape.
 - Use PowerShell archive extraction for Windows runtime zip files.
@@ -34,8 +35,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Exclude generated demo artifacts and website source from VSIX packaging.
 
 ### Documentation
+
 - Added a GA readiness checklist and updated compatibility docs for Tectonic 0.16.9.
 - Clarified marketplace privacy and security docs for telemetry, first-use runtime downloads, Tectonic package downloads, offline mode, and limited Doctor support in untrusted workspaces.
+
+## [0.1.1] - 2026-05-13
+
+### Changed
+
+- Patch release: version bump for continued marketplace distribution.
+- Expand marketplace `README.md` and `package.json` description/keywords: open-source mission, local-first privacy story, and fit with AI-assisted editors (VS Code, Cursor, local models).
+- Document SyncTeX / PDF click-to-source and a source-code layout table (`src/preview`, `src/commands`, etc.).
 
 ## [0.1.0] - 2024-01-01
 

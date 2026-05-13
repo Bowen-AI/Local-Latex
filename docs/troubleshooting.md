@@ -54,3 +54,13 @@ Run `LaTeX: Doctor` to see the active editor, configured main file, and resolved
 If `latexOneClick.offlineOnly` is `true`, only cached packages are used.
 Disable this setting to allow Tectonic to download missing packages on first compile.
 If you need fully offline compilation, compile once while online to populate Tectonic's package cache, then enable `latexOneClick.offlineOnly`.
+
+## Bibliography errors (`main.bbl`, BibTeX, “missing \\item”)
+
+Messages such as `Something's wrong--perhaps a missing \\item` in a `.bbl` file mean the **generated bibliography** is invalid. The usual causes are a bad or incomplete `.bib` entry, a stale `.bbl` after editing citations, or a BibTeX run that failed while the LaTeX run continued.
+
+1. Open the reported `.bbl` file at the line given in the error and inspect the surrounding `\\bibitem` / environment.
+2. Remove generated files and compile again: `main.bbl`, `main.blg`, and related aux files (or use **LaTeX: Clean Build Artifacts** when those files live under your configured output directory).
+3. Fix errors reported by BibTeX (typos in citation keys, broken `.bib` syntax, special characters).
+
+Tectonic may say BibTeX errors were “ignored” in a short log. To see **full BibTeX and engine output** in the LaTeX One-Click output panel, set **`latexOneClick.tectonicPrint`** to `true`. To keep engine log files under the output directory, set **`latexOneClick.tectonicKeepLogs`** to `true`.

@@ -80,7 +80,9 @@ export function buildDoctorReport(options: DoctorReportOptions): string {
       `Offline only: ${yesNo(settings.offlineOnly)}`,
       `Preview auto-open: ${yesNo(settings.previewAutoOpen)}`,
       `Preview preserve focus: ${yesNo(settings.previewPreserveFocus)}`,
-      `SyncTeX: ${yesNo(settings.syncTeX)}`
+      `SyncTeX: ${yesNo(settings.syncTeX)}`,
+      `Tectonic --print: ${yesNo(settings.tectonicPrint)}`,
+      `Tectonic --keep-logs: ${yesNo(settings.tectonicKeepLogs)}`
     );
   }
 

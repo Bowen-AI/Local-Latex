@@ -11,6 +11,10 @@ export interface ExtensionSettings {
   previewAutoOpen: boolean;
   previewPreserveFocus: boolean;
   syncTeX: boolean;
+  /** Pass --print to Tectonic so BibTeX and engine messages are visible in the output channel. */
+  tectonicPrint: boolean;
+  /** Pass --keep-logs to Tectonic so intermediate logs are kept under the output directory. */
+  tectonicKeepLogs: boolean;
 }
 
 export function getSettings(scope?: vscode.Uri): ExtensionSettings {
@@ -25,5 +29,7 @@ export function getSettings(scope?: vscode.Uri): ExtensionSettings {
     previewAutoOpen: cfg.get<boolean>('preview.autoOpen', DEFAULTS.previewAutoOpen),
     previewPreserveFocus: cfg.get<boolean>('preview.preserveFocus', DEFAULTS.previewPreserveFocus),
     syncTeX: cfg.get<boolean>('syncTeX', DEFAULTS.syncTeX),
+    tectonicPrint: cfg.get<boolean>('tectonicPrint', DEFAULTS.tectonicPrint),
+    tectonicKeepLogs: cfg.get<boolean>('tectonicKeepLogs', DEFAULTS.tectonicKeepLogs),
   };
 }

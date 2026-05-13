@@ -10,6 +10,8 @@ export interface CompileOptions {
   timeoutMs: number;
   offlineOnly: boolean;
   synctex: boolean;
+  tectonicPrint?: boolean;
+  tectonicKeepLogs?: boolean;
   signal?: AbortSignal;
   onOutput?: (data: string) => void;
 }
@@ -42,13 +44,24 @@ export function getOutputPdfPath(
   return path.join(resolveOutputDirectory(workspaceRoot, outputDirectory), `${getTexOutputBaseName(mainFile)}.pdf`);
 }
 
-export function buildCompileArgs(options: Pick<CompileOptions, 'outputDirectory' | 'offlineOnly' | 'mainFile' | 'synctex'>): string[] {
+export function buildCompileArgs(
+  options: Pick<
+    CompileOptions,
+    'outputDirectory' | 'offlineOnly' | 'mainFile' | 'synctex' | 'tectonicPrint' | 'tectonicKeepLogs'
+  >
+): string[] {
   const args = ['--outdir', options.outputDirectory];
   if (options.synctex) {
     args.push('--synctex');
   }
   if (options.offlineOnly) {
     args.push('--only-cached');
+  }
+  if (options.tectonicPrint) {
+    args.push('--print');
+  }
+  if (options.tectonicKeepLogs) {
+    args.push('--keep-logs');
   }
   args.push(options.mainFile);
   return args;
@@ -71,6 +84,8 @@ export async function compile(options: CompileOptions): Promise<CompileResult> {
     offlineOnly,
     mainFile,
     synctex: options.synctex,
+    tectonicPrint: options.tectonicPrint,
+    tectonicKeepLogs: options.tectonicKeepLogs,
   });
 
   const start = Date.now();

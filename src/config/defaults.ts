@@ -8,4 +8,6 @@ export const DEFAULTS = {
   previewAutoOpen: true,
   previewPreserveFocus: true,
   syncTeX: true,
+  tectonicPrint: false,
+  tectonicKeepLogs: false,
 };
