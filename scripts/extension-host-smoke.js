@@ -6,7 +6,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
-const EXTENSION_ID = 'latex-one-click.latex-one-click';
+const EXTENSION_ID = 'BowenAI.latex-one-click';
 
 function findExecutable(name) {
   const pathValue = process.env.PATH ?? '';

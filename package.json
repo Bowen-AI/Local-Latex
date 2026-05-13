@@ -3,7 +3,7 @@
   "displayName": "LaTeX One-Click",
   "description": "Compile LaTeX to PDF locally with bundled Tectonic and a built-in PDF preview",
   "version": "0.1.0",
-  "publisher": "latex-one-click",
+  "publisher": "BowenAI",
   "repository": {
     "type": "git",
     "url": "https://github.com/Bowen-AI/Local-Latex"

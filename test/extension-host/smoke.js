@@ -5,10 +5,10 @@ const vscode = require('vscode');
 
 function findExtension() {
   return (
-    vscode.extensions.getExtension('latex-one-click.latex-one-click') ??
+    vscode.extensions.getExtension('BowenAI.latex-one-click') ??
     vscode.extensions.all.find(
       (extension) =>
-        extension.packageJSON?.publisher === 'latex-one-click' &&
+        extension.packageJSON?.publisher === 'BowenAI' &&
         extension.packageJSON?.name === 'latex-one-click'
     )
   );
