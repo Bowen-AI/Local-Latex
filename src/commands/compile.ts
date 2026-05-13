@@ -147,8 +147,11 @@ export async function compileCommand(
             log('Tectonic fetched TeX packages during this compile; subsequent cached compiles should be faster.');
           }
 
-          if (settings.previewAutoOpen && result.outputPdf) {
-            await openPdf(result.outputPdf, root, settings.previewPreserveFocus, extensionUri);
+          if (result.outputPdf) {
+            await openPdf(result.outputPdf, root, settings.previewPreserveFocus, extensionUri, {
+              invalidatePreviewNonce: Date.now(),
+              ...(settings.previewAutoOpen ? {} : { refreshExistingOnly: true }),
+            });
           }
         } else {
           statusBar.text = '$(error) Compile failed';

@@ -12,6 +12,10 @@ import { disposeDiagnostics } from './core/diagnostics';
 import { RuntimeManager } from './runtime/runtimeManager';
 import { updateCurrentPdfView } from './preview/previewState';
 import { disposePdfPreviews } from './preview/pdfPreview';
+import {
+  configureDebugSessionNdjsonPath,
+  configureExtensionHostDebugLogPath,
+} from './preview/agentDebugLog';
 import { isTexFile } from './core/texFiles';
 import { formatWorkspaceAccessWarning, getTrustedWorkspaceBlockReason } from './core/workspaceAccess';
 import { onCompileSnapshotUpdated } from './sidebar/compileSidebarState';
@@ -27,8 +31,18 @@ let statusBar: vscode.StatusBarItem | undefined;
 let trustedWorkspaceFeaturesInitialized = false;
 const disposables: vscode.Disposable[] = [];
 
+function syncDebugSessionLogPath(): void {
+  const root = getWorkspaceRoot();
+  if (root) {
+    configureDebugSessionNdjsonPath(root);
+  }
+}
+
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const storagePath = context.globalStorageUri.fsPath;
+
+  configureExtensionHostDebugLogPath(context.extensionUri.fsPath);
+  syncDebugSessionLogPath();
 
   const projectTreeProvider = new ProjectTreeProvider();
   const compileTreeProvider = new CompileTreeProvider();
@@ -45,6 +59,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       compileTreeProvider.refresh();
     }),
     vscode.workspace.onDidChangeWorkspaceFolders(() => {
+      syncDebugSessionLogPath();
       projectTreeProvider.refresh();
       compileTreeProvider.refresh();
     }),

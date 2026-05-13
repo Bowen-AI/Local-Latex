@@ -101,6 +101,27 @@ async function run() {
   await vscode.commands.executeCommand('latexOneClick.openPdf');
   await previewReady;
 
+  const previewReloaded = new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      disposable.dispose();
+      reject(new Error('Timed out waiting for PDF preview reload timing event'));
+    }, 15000);
+    const disposable = pdfPreview.onPdfPreviewPerf((event) => {
+      if (event.phase !== 'ready') {
+        return;
+      }
+      clearTimeout(timeout);
+      disposable.dispose();
+      assert.strictEqual(event.pageCount, 1, 'Expected reloaded smoke PDF to render as one page');
+      resolve(event);
+    });
+  });
+
+  await pdfPreview.openPdf(path.join(workspace, 'out', 'main.pdf'), workspace, true, extension.extensionUri, {
+    invalidatePreviewNonce: Date.now(),
+  });
+  await previewReloaded;
+
   const smokeOut = path.join(workspace, '.latex-smoke-out');
   fs.mkdirSync(smokeOut, { recursive: true });
   fs.writeFileSync(path.join(smokeOut, 'temporary.aux'), 'temporary');

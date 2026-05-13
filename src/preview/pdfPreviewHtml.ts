@@ -4,6 +4,8 @@ export interface PdfPreviewHtmlOptions {
   cspSource: string;
   pdfFileName: string;
   pdfUri: string;
+  pdfDataBase64?: string;
+  pdfDataBytes?: number;
   pdfJsUri: string;
   workerUri: string;
   cMapsUri: string;
@@ -15,6 +17,12 @@ export function buildPdfPreviewHtml(options: PdfPreviewHtmlOptions): string {
   const nonce = options.nonce ?? getNonce();
   const title = escapeHtml(options.pdfFileName);
   const pdfUrlLiteral = toScriptStringLiteral(options.pdfUri);
+  const pdfDataBase64Literal =
+    options.pdfDataBase64 === undefined ? 'undefined' : toScriptStringLiteral(options.pdfDataBase64);
+  const pdfDataBytesLiteral =
+    typeof options.pdfDataBytes === 'number' && Number.isFinite(options.pdfDataBytes)
+      ? String(options.pdfDataBytes)
+      : 'undefined';
   const pdfJsUriLiteral = toScriptStringLiteral(options.pdfJsUri);
   const workerUriLiteral = toScriptStringLiteral(options.workerUri);
   const cMapsUriLiteral = toScriptStringLiteral(withTrailingSlash(options.cMapsUri));
@@ -25,8 +33,10 @@ export function buildPdfPreviewHtml(options: PdfPreviewHtmlOptions): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${options.cspSource} data:; connect-src ${options.cspSource}; script-src 'nonce-${nonce}' ${options.cspSource}; style-src 'unsafe-inline' ${options.cspSource}; worker-src blob: ${options.cspSource};">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${options.cspSource} data:; frame-src ${options.cspSource}; connect-src ${options.cspSource}; script-src 'nonce-${nonce}' ${options.cspSource}; style-src 'unsafe-inline' ${options.cspSource}; worker-src blob: ${options.cspSource};">
   <title>${title}</title>
+  <link rel="modulepreload" href="${escapeHtml(options.pdfJsUri)}" crossorigin="anonymous" />
+  <link rel="preload" href="${escapeHtml(options.workerUri)}" as="worker" crossorigin="anonymous" />
   <style>
     :root {
       color-scheme: light dark;
@@ -42,11 +52,17 @@ export function buildPdfPreviewHtml(options: PdfPreviewHtmlOptions): string {
     html,
     body {
       margin: 0;
+      height: 100%;
       min-height: 100%;
       background: var(--vscode-editor-background);
       color: var(--text);
       font-family: var(--vscode-font-family);
       font-size: var(--vscode-font-size);
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
     }
 
     .toolbar {
@@ -117,11 +133,24 @@ export function buildPdfPreviewHtml(options: PdfPreviewHtmlOptions): string {
 
     #viewer {
       display: flex;
+      flex: 1;
       flex-direction: column;
       align-items: center;
       gap: 16px;
       padding: 16px;
       overflow: auto;
+    }
+
+    #quickPdf {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      border: 0;
+      background: var(--vscode-editor-background);
+    }
+
+    .isHidden {
+      display: none !important;
     }
 
     .page {
@@ -183,14 +212,15 @@ export function buildPdfPreviewHtml(options: PdfPreviewHtmlOptions): string {
     <button id="compile" class="primaryButton" title="Compile PDF">Compile</button>
     <div class="toolbarGroup" aria-label="Zoom controls">
       <button id="zoomOut" class="iconButton" title="Zoom out (Ctrl+-)" aria-label="Zoom out">-</button>
-      <div id="zoomValue" aria-live="polite">125%</div>
+      <div id="zoomValue" aria-live="polite">100%</div>
       <button id="zoomIn" class="iconButton" title="Zoom in (Ctrl+= / Ctrl++)" aria-label="Zoom in">+</button>
       <button id="view" title="Fit to width">Fit</button>
     </div>
     <div class="title">${title}</div>
     <div id="status">Loading</div>
   </div>
-  <main id="viewer"></main>
+  <iframe id="quickPdf" src="${escapeHtml(options.pdfUri)}" title="${title}"></iframe>
+  <main id="viewer" class="isHidden"></main>
 
   <script nonce="${nonce}">
     window.__latexOneClickPreviewBootStarted = performance.now();
@@ -202,12 +232,13 @@ export function buildPdfPreviewHtml(options: PdfPreviewHtmlOptions): string {
     const moduleReadyAt = performance.now();
     const vscode = acquireVsCodeApi();
     const viewer = document.getElementById('viewer');
+    const quickPdf = document.getElementById('quickPdf');
     const status = document.getElementById('status');
     const titleElement = document.querySelector('.title');
     const zoomValue = document.getElementById('zoomValue');
-    let pdfUrl = ${pdfUrlLiteral};
+    let pdfSource = createPdfSource(${pdfUrlLiteral}, ${pdfDataBase64Literal}, ${pdfDataBytesLiteral});
     const previousState = vscode.getState() || {};
-    const defaultScale = 1.25;
+    const defaultScale = 1;
     const minScale = 0.5;
     const maxScale = 3;
     const scaleStep = 0.15;
@@ -216,15 +247,16 @@ export function buildPdfPreviewHtml(options: PdfPreviewHtmlOptions): string {
     let loadGeneration = 0;
     let renderGeneration = 0;
     let loadingTask;
+    let pdfWorker;
+    let pdfWorkerMode = 'dedicated';
     let pageObserver;
     let includeBootTimings = true;
 
-    pdfjsLib.GlobalWorkerOptions.workerSrc = ${workerUriLiteral};
-    const workerStartedAt = performance.now();
-    const pdfWorker = new pdfjsLib.PDFWorker({ name: 'latex-one-click-preview' });
+    const workerUri = ${workerUriLiteral};
+    const workerStartupFallbackMs = 1200;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerUri;
     const bootTimings = {
-      pdfJsModuleMs: moduleReadyAt - bootStartedAt,
-      workerCreateMs: performance.now() - workerStartedAt
+      pdfJsModuleMs: moduleReadyAt - bootStartedAt
     };
     updateZoomValue();
 
@@ -285,16 +317,44 @@ export function buildPdfPreviewHtml(options: PdfPreviewHtmlOptions): string {
             titleElement.textContent = event.data.pdfFileName;
           }
         }
-        void loadPdf(event.data.pdfUri);
+        if (typeof event.data.requestId === 'number') {
+          vscode.postMessage({ type: 'reloadPdfAccepted', requestId: event.data.requestId });
+        }
+        const nextPdfSource = createPdfSource(
+          event.data.pdfUri,
+          typeof event.data.pdfDataBase64 === 'string' ? event.data.pdfDataBase64 : undefined,
+          typeof event.data.pdfDataBytes === 'number' ? event.data.pdfDataBytes : undefined
+        );
+        showQuickPdf(nextPdfSource.url);
+        void loadPdf(nextPdfSource);
       }
     });
 
+    vscode.postMessage({ type: 'previewReady' });
+
     window.addEventListener('unload', () => {
       void pdfDocument?.destroy();
-      void pdfWorker.destroy();
+      void pdfWorker?.destroy();
     });
 
-    async function loadPdf(nextPdfUrl = pdfUrl) {
+    function createPdfSource(url, dataBase64, dataBytes) {
+      return {
+        url,
+        dataBase64: typeof dataBase64 === 'string' && dataBase64.length > 0 ? dataBase64 : undefined,
+        dataBytes: typeof dataBytes === 'number' ? dataBytes : undefined
+      };
+    }
+
+    function decodeBase64Pdf(value) {
+      const binary = atob(value);
+      const bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index += 1) {
+        bytes[index] = binary.charCodeAt(index);
+      }
+      return bytes;
+    }
+
+    async function loadPdf(nextPdfSource = pdfSource) {
       const generation = ++loadGeneration;
       const previousDocument = pdfDocument;
       const previousLoadingTask = loadingTask;
@@ -302,28 +362,66 @@ export function buildPdfPreviewHtml(options: PdfPreviewHtmlOptions): string {
       const timings = includeBootTimings ? { ...bootTimings } : {};
       includeBootTimings = false;
 
-      pdfUrl = nextPdfUrl;
+      pdfSource = nextPdfSource;
       pdfDocument = undefined;
       loadingTask = undefined;
       renderGeneration += 1;
       pageObserver?.disconnect();
       status.textContent = 'Opening';
+      showQuickPdf(pdfSource.url);
 
       if (previousLoadingTask) {
         void previousLoadingTask.destroy();
       }
 
       try {
+        status.textContent = 'Preparing';
+        const worker = await getReadyPdfWorker(timings);
+        if (generation !== loadGeneration) {
+          return;
+        }
+
         const taskStartedAt = performance.now();
-        const task = pdfjsLib.getDocument({
-          url: pdfUrl,
-          worker: pdfWorker,
+        const documentSource = {
+          worker,
+          verbosity: pdfjsLib.VerbosityLevel.ERRORS,
           cMapUrl: ${cMapsUriLiteral},
           cMapPacked: true,
           standardFontDataUrl: ${standardFontsUriLiteral}
-        });
+        };
+        if (pdfSource.dataBase64) {
+          const decodeStartedAt = performance.now();
+          documentSource.data = decodeBase64Pdf(pdfSource.dataBase64);
+          timings.decodeMs = performance.now() - decodeStartedAt;
+          timings.inlineBytes = pdfSource.dataBytes;
+        } else {
+          documentSource.url = pdfSource.url;
+        }
+        const task = pdfjsLib.getDocument(documentSource);
         loadingTask = task;
         timings.openTaskMs = performance.now() - taskStartedAt;
+
+        let lastProgressDiagMs = -500;
+        task.onProgress = (progressData) => {
+          const elapsedRounded = Math.round(performance.now() - startedAt);
+          const totalKnown = typeof progressData.total === 'number' ? progressData.total : 0;
+          if (
+            elapsedRounded - lastProgressDiagMs < 400 &&
+            totalKnown > 0 &&
+            progressData.loaded < totalKnown
+          ) {
+            return;
+          }
+          lastProgressDiagMs = elapsedRounded;
+          vscode.postMessage({
+            type: 'previewLoadProgress',
+            payload: {
+              loaded: progressData.loaded,
+              total: totalKnown,
+              elapsedMs: elapsedRounded,
+            },
+          });
+        };
 
         status.textContent = 'Parsing';
         const parseStartedAt = performance.now();
@@ -361,6 +459,7 @@ export function buildPdfPreviewHtml(options: PdfPreviewHtmlOptions): string {
         }
         pdfDocument = previousDocument;
         status.textContent = 'Unable to render PDF';
+        showQuickPdf(pdfSource.url);
         reportPreviewPerf('error', {
           totalMs: Math.round(performance.now() - startedAt),
           stages: timings,
@@ -420,7 +519,93 @@ export function buildPdfPreviewHtml(options: PdfPreviewHtmlOptions): string {
         return;
       }
 
+      showPdfJsViewer();
       window.setTimeout(() => setupLazyPages(generation, firstViewport), 0);
+    }
+
+    function createPdfWorker() {
+      const startedAt = performance.now();
+      const worker = new pdfjsLib.PDFWorker({ name: 'latex-one-click-preview' });
+      return {
+        worker,
+        createMs: performance.now() - startedAt
+      };
+    }
+
+    async function getReadyPdfWorker(timings) {
+      if (!pdfWorker || pdfWorker.destroyed) {
+        const created = createPdfWorker();
+        pdfWorker = created.worker;
+        pdfWorkerMode = 'dedicated';
+        timings.workerCreateMs = created.createMs;
+      }
+
+      const readyStartedAt = performance.now();
+      if (await waitForPdfWorker(pdfWorker, workerStartupFallbackMs)) {
+        timings.workerReadyMs = performance.now() - readyStartedAt;
+        timings.workerMode = pdfWorkerMode;
+        return pdfWorker;
+      }
+
+      timings.workerStartupTimeoutMs = performance.now() - readyStartedAt;
+      void pdfWorker.destroy();
+      pdfWorker = undefined;
+      await ensureMainThreadWorker(timings);
+
+      const fallbackStartedAt = performance.now();
+      const created = createPdfWorker();
+      pdfWorker = created.worker;
+      pdfWorkerMode = 'main-thread';
+      timings.fallbackWorkerCreateMs = created.createMs;
+      await pdfWorker.promise;
+      timings.workerReadyMs = performance.now() - fallbackStartedAt;
+      timings.workerMode = pdfWorkerMode;
+      return pdfWorker;
+    }
+
+    async function waitForPdfWorker(worker, timeoutMs) {
+      let timeoutId;
+      try {
+        return await Promise.race([
+          worker.promise.then(
+            () => true,
+            () => false
+          ),
+          new Promise((resolve) => {
+            timeoutId = window.setTimeout(() => resolve(false), timeoutMs);
+          }),
+        ]);
+      } finally {
+        if (timeoutId !== undefined) {
+          window.clearTimeout(timeoutId);
+        }
+      }
+    }
+
+    async function ensureMainThreadWorker(timings) {
+      if (globalThis.pdfjsWorker?.WorkerMessageHandler) {
+        return;
+      }
+
+      const importStartedAt = performance.now();
+      await import(workerUri);
+      timings.fallbackWorkerImportMs = performance.now() - importStartedAt;
+    }
+
+    function showQuickPdf(url) {
+      if (!quickPdf) {
+        return;
+      }
+      if (typeof url === 'string' && quickPdf.getAttribute('src') !== url) {
+        quickPdf.setAttribute('src', url);
+      }
+      quickPdf.classList.remove('isHidden');
+      viewer.classList.add('isHidden');
+    }
+
+    function showPdfJsViewer() {
+      viewer.classList.remove('isHidden');
+      quickPdf?.classList.add('isHidden');
     }
 
     function setupLazyPages(generation, firstViewport) {
@@ -506,7 +691,8 @@ export function buildPdfPreviewHtml(options: PdfPreviewHtmlOptions): string {
         return;
       }
       const viewport = page.getViewport({ scale });
-      const ratio = window.devicePixelRatio || 1;
+      const rawDpr = window.devicePixelRatio || 1;
+      const ratio = Math.min(rawDpr, 1.5);
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
       const label = document.createElement('div');
