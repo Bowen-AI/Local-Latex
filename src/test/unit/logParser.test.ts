@@ -46,4 +46,28 @@ describe('logParser', () => {
       message: 'Underfull \\vbox (badness 10000) has occurred while \\output is active',
     });
   });
+
+  it('parses Tectonic file diagnostics', () => {
+    const log = `error: main.bbl:2: LaTeX Error: Something's wrong--perhaps a missing \\item.`;
+    const entries = parseLog(log, 'main.tex');
+
+    expect(entries[0]).toMatchObject({
+      file: 'main.bbl',
+      line: 2,
+      severity: 'error',
+      message: "LaTeX Error: Something's wrong--perhaps a missing \\item.",
+    });
+  });
+
+  it('parses Tectonic caused-by diagnostics', () => {
+    const log = `error: halted on potentially-recoverable error as specified\ncaused by: sections/intro.tex:15: Undefined control sequence.`;
+    const entries = parseLog(log, 'main.tex');
+
+    expect(entries[0]).toMatchObject({
+      file: 'sections/intro.tex',
+      line: 15,
+      severity: 'error',
+      message: 'Undefined control sequence.',
+    });
+  });
 });

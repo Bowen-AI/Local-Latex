@@ -6,7 +6,6 @@ import { getCurrentPdf, setCurrentPdf } from './previewState';
 import { findSyncTexTarget, PdfClick, readSyncTexDocument } from './synctex';
 import { log } from '../core/outputChannel';
 import { buildPdfPreviewHtml } from './pdfPreviewHtml';
-import { agentDebugLog } from './agentDebugLog';
 
 interface PreviewEntry {
   panel: vscode.WebviewPanel;
@@ -80,31 +79,8 @@ export async function openPdf(
   }
 
   if (existing) {
-    // #region agent log
-    agentDebugLog(
-      'pdfPreview.ts:openPdf:existing',
-      'existing panel path',
-      { pdfPath: path.basename(pdfPath), hadSamePath: existing.pdfPath === pdfPath },
-      'E'
-    );
-    // #endregion
     const pdfFileName = path.basename(pdfPath);
-    // #region agent log
-    const fpStarted = Date.now();
-    // #endregion
     const nextPdfFingerprint = previewVersionTag(pdfPath, options);
-    // #region agent log
-    agentDebugLog(
-      'pdfPreview.ts:openPdf:fingerprint',
-      'stat version computed (fast)',
-      {
-        ms: Date.now() - fpStarted,
-        versionLen: nextPdfFingerprint.length,
-        nonce: options?.invalidatePreviewNonce,
-      },
-      'A'
-    );
-    // #endregion
     existing.panel.title = `PDF: ${pdfFileName}`;
     if (!options?.refreshExistingOnly) {
       existing.panel.reveal(vscode.ViewColumn.Beside, preserveFocus);
@@ -134,14 +110,6 @@ export async function openPdf(
     return;
   }
 
-  // #region agent log
-  agentDebugLog(
-    'pdfPreview.ts:openPdf:newPanel',
-    'creating new webview panel',
-    { pdfPath: path.basename(pdfPath) },
-    'E'
-  );
-  // #endregion
   const panel = vscode.window.createWebviewPanel(
     'latexOneClickPdfPreview',
     `PDF: ${path.basename(pdfPath)}`,
@@ -263,21 +231,6 @@ function logPreviewPerf(pdfPath: string, payload: unknown): void {
     pageCount: pageCountValue,
   });
   log(`PDF preview ${phase}${total}: ${path.basename(pdfPath)}${pageCount}${error}${stageText}`);
-  // #region agent log
-  agentDebugLog(
-    'pdfPreview.ts:logPreviewPerf',
-    `previewPerf ${phase}`,
-    {
-      pdfBase: path.basename(pdfPath),
-      phase,
-      totalMs,
-      pageCount: pageCountValue,
-      stages: data.stages,
-      error: data.error,
-    },
-    phase === 'error' ? 'C' : 'D'
-  );
-  // #endregion
 }
 
 function logPreviewTransportProgress(pdfPath: string, payload: unknown): void {
@@ -293,14 +246,6 @@ function logPreviewTransportProgress(pdfPath: string, payload: unknown): void {
   log(
     `PDF preview transport: loaded=${loaded ?? '?'}${total !== undefined ? `/${total}` : ''} (${elapsedMs ?? '?'}ms from loadPdf start): ${path.basename(pdfPath)}`
   );
-  // #region agent log
-  agentDebugLog(
-    'pdfPreview.ts:previewLoadProgress',
-    'pdfjs onProgress',
-    { pdfBase: path.basename(pdfPath), loaded, total, elapsedMs },
-    'C'
-  );
-  // #endregion
 }
 
 function buildPdfOpenUri(pdfPath: string, currentPdf: string | undefined): vscode.Uri {
@@ -377,28 +322,10 @@ async function sendReloadMessage(
 ): Promise<void> {
   entry.pendingReload = message;
   if (!entry.ready) {
-    agentDebugLog(
-      'pdfPreview.ts:sendReloadMessage:notReady',
-      'queued reload until previewReady',
-      { pdfPath: path.basename(entry.pdfPath), requestId: message.requestId },
-      'B'
-    );
     return;
   }
 
-  const pmStarted = Date.now();
   const posted = await entry.panel.webview.postMessage(message);
-  agentDebugLog(
-    'pdfPreview.ts:sendReloadMessage:postMessage',
-    'postMessage reloadPdf resolved',
-    {
-      ms: Date.now() - pmStarted,
-      posted,
-      requestId: message.requestId,
-      inlineBytes: message.pdfDataBase64 ? message.pdfDataBytes : undefined,
-    },
-    'B'
-  );
 
   if (!posted) {
     rebuildPreviewHtml(entry, extensionUri, 'postMessage returned false');
@@ -419,12 +346,7 @@ async function sendReloadMessage(
 function rebuildPreviewHtml(entry: PreviewEntry, extensionUri: vscode.Uri, reason: string): void {
   entry.ready = false;
   entry.pendingReload = undefined;
-  agentDebugLog(
-    'pdfPreview.ts:rebuildPreviewHtml',
-    'rebuilding preview html',
-    { pdfPath: path.basename(entry.pdfPath), reason },
-    'B'
-  );
+  log(`PDF preview reload fallback: ${reason}`);
   entry.panel.webview.html = buildWebviewHtml(entry.panel.webview, extensionUri, entry.pdfPath, entry.pdfSource);
 }
 

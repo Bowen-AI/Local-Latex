@@ -39,6 +39,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a GA readiness checklist and updated compatibility docs for Tectonic 0.16.9.
 - Clarified marketplace privacy and security docs for telemetry, first-use runtime downloads, Tectonic package downloads, offline mode, and limited Doctor support in untrusted workspaces.
 
+## [0.1.2] - 2026-05-13
+
+### Fixed
+
+- Show a clear bibliography hint when Tectonic/BibTeX generates an empty `.bbl` for projects with bibliography commands but no citations.
+- Parse Tectonic `file:line` diagnostics so generated `.bbl` failures point to the correct file in the Errors & Warnings view.
+- Keep volatile compressed PDF metadata from forcing unnecessary preview refreshes.
+- Remove local agent-debug instrumentation and block debug artifacts from VSIX packaging.
+
+### Tests
+
+- Add a VS Code extension-host smoke for the empty-bibliography failure path.
+
 ## [0.1.1] - 2026-05-13
 
 ### Changed

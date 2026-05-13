@@ -13,6 +13,7 @@ import { RuntimeManager } from '../runtime/runtimeManager';
 import { nodeFileSystemOps } from '../core/nodeFileSystem';
 import { captureCompileSnapshot } from '../sidebar/compileSidebarState';
 import { summarizeTectonicProgress } from '../core/tectonicProgress';
+import { detectEmptyBibliographyHint } from '../core/bibliographyHints';
 
 export async function compileCommand(
   storagePath: string,
@@ -130,6 +131,19 @@ export async function compileCommand(
           signal: abortController.signal,
           onOutput: handleOutput,
         });
+
+        if (!result.success) {
+          const hint = await detectEmptyBibliographyHint({
+            workspaceRoot: root,
+            mainFile,
+            output: result.stdout + result.stderr,
+            fs: nodeFileSystemOps,
+          });
+          if (hint && !result.logs.some((entry) => entry.message === hint.message)) {
+            result.logs.unshift(hint);
+            log(`Hint: ${hint.message}`);
+          }
+        }
 
         applyDiagnostics(result.logs, root);
         captureCompileSnapshot(root, result);

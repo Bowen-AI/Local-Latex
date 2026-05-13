@@ -2,7 +2,7 @@
   "name": "latex-one-click",
   "displayName": "LaTeX One-Click",
   "description": "Compile LaTeX locally in VS Code with Tectonic: no full TeX distribution required, on-demand packages, integrated PDF preview with SyncTeX navigation from PDF to source. Open source.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "BowenAI",
   "repository": {
     "type": "git",

@@ -24,7 +24,8 @@ function normalizeObjectStream(objectBody: string): string | undefined {
 
   try {
     const inflated = zlib.inflateSync(Buffer.from(match[2], 'latin1')).toString('latin1');
-    return `${normalizePdfText(match[1])}\nstream\n${normalizePdfText(inflated)}\nendstream`;
+    const dictionary = normalizePdfText(match[1]).replace(/\/Length\s+\d+\b/g, '/Length NORMALIZED');
+    return `${dictionary}\nstream\n${normalizePdfText(inflated)}\nendstream`;
   } catch {
     return undefined;
   }
@@ -35,6 +36,12 @@ export async function computeStablePdfFingerprint(pdfPath: string): Promise<stri
   const pdf = raw.toString('latin1');
   const hash = crypto.createHash('sha256');
   let objectCount = 0;
+  let stableSize = 0;
+
+  const updateStableHash = (value: string): void => {
+    hash.update(value, 'latin1');
+    stableSize += Buffer.byteLength(value, 'latin1');
+  };
 
   for (const match of pdf.matchAll(INDIRECT_OBJECT_REGEX)) {
     const objectNumber = match[1];
@@ -44,15 +51,14 @@ export async function computeStablePdfFingerprint(pdfPath: string): Promise<stri
     }
 
     objectCount += 1;
-    hash.update(`obj:${objectNumber}\n`);
-    hash.update(normalizeObjectStream(objectBody) ?? normalizePdfText(objectBody), 'latin1');
-    hash.update('\n');
+    updateStableHash(`obj:${objectNumber}\n`);
+    updateStableHash(normalizeObjectStream(objectBody) ?? normalizePdfText(objectBody));
+    updateStableHash('\n');
   }
 
   if (objectCount === 0) {
-    hash.update(normalizePdfText(pdf), 'latin1');
+    updateStableHash(normalizePdfText(pdf));
   }
 
-  const stat = await fs.promises.stat(pdfPath);
-  return `${hash.digest('hex')}-${objectCount}-${stat.size}`;
+  return `${hash.digest('hex')}-${objectCount}-${stableSize}`;
 }

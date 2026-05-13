@@ -59,6 +59,8 @@ If you need fully offline compilation, compile once while online to populate Tec
 
 Messages such as `Something's wrong--perhaps a missing \\item` in a `.bbl` file mean the **generated bibliography** is invalid. The usual causes are a bad or incomplete `.bib` entry, a stale `.bbl` after editing citations, or a BibTeX run that failed while the LaTeX run continued.
 
+If the project has bibliography entries but no `\cite{...}` or `\nocite{...}` commands, BibTeX can generate an empty `.bbl`; LaTeX then reports a missing `\item` inside the generated bibliography. Add a real citation, add `\nocite{*}` to print all bibliography entries, or temporarily remove/comment the bibliography command until references are needed.
+
 1. Open the reported `.bbl` file at the line given in the error and inspect the surrounding `\\bibitem` / environment.
 2. Remove generated files and compile again: `main.bbl`, `main.blg`, and related aux files (or use **LaTeX: Clean Build Artifacts** when those files live under your configured output directory).
 3. Fix errors reported by BibTeX (typos in citation keys, broken `.bib` syntax, special characters).
