@@ -67,6 +67,7 @@ const FORBIDDEN_RULES = [
   ['sample projects', /^examples\//],
   ['CI configuration', /^\.github\//],
   ['agent debug artifacts', /^\.cursor\//],
+  ['agent debug artifacts', /^\.claude\//],
   ['local VS Code settings', /^\.vscode\//],
   ['coverage output', /^coverage\//],
   ['node_modules', /^node_modules\//],
