@@ -43,7 +43,10 @@
     "onCommand:latexOneClick.doctor",
     "onCommand:latexOneClick.revealTexLocation",
     "onCommand:latexOneClick.sidebarToggleBool",
-    "onCommand:latexOneClick.sidebarEditOutputDirectory"
+    "onCommand:latexOneClick.sidebarEditOutputDirectory",
+    "onCommand:latexOneClick.jumpToFirstError",
+    "onCommand:latexOneClick.showCompileLog",
+    "onCommand:latexOneClick.copyCompileLog"
   ],
   "main": "./out/extension.js",
   "capabilities": {
@@ -103,6 +106,18 @@
       {
         "command": "latexOneClick.sidebarEditOutputDirectory",
         "title": "LaTeX: Edit Output Directory (Sidebar)"
+      },
+      {
+        "command": "latexOneClick.jumpToFirstError",
+        "title": "LaTeX: Jump to First Error"
+      },
+      {
+        "command": "latexOneClick.showCompileLog",
+        "title": "LaTeX: Show Compile Log"
+      },
+      {
+        "command": "latexOneClick.copyCompileLog",
+        "title": "LaTeX: Copy Compile Log"
       }
     ],
     "configuration": {

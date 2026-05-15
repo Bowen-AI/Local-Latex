@@ -62,6 +62,42 @@ export interface OpenPdfOptions {
   refreshExistingOnly?: boolean;
 }
 
+export interface CompileFailedBanner {
+  summary: string;
+  errors: Array<{ file: string; line: number; message: string }>;
+}
+
+/**
+ * Post a compile-failed banner to any existing preview panel for this workspace.
+ * Does nothing if no panel exists yet (we don't open a panel just to show an error —
+ * the sidebar + notification handle that case).
+ */
+export async function postCompileFailedToPreview(
+  workspaceFolder: string,
+  banner: CompileFailedBanner
+): Promise<void> {
+  const entry = previews.get(workspaceFolder);
+  if (!entry) return;
+  await entry.panel.webview.postMessage({
+    type: 'compileFailed',
+    payload: {
+      summary: banner.summary,
+      errors: banner.errors.slice(0, 5).map((entry) => ({
+        file: entry.file,
+        line: entry.line,
+        message: entry.message,
+      })),
+    },
+  });
+}
+
+/** Clear any "compile failed" banner from the existing preview panel. */
+export async function clearCompileFailedBanner(workspaceFolder: string): Promise<void> {
+  const entry = previews.get(workspaceFolder);
+  if (!entry) return;
+  await entry.panel.webview.postMessage({ type: 'compileFailedClear' });
+}
+
 export async function openPdf(
   pdfPath: string,
   workspaceFolder: string,
@@ -103,6 +139,7 @@ export async function openPdf(
       ...(nextPdfSource.dataBase64 ? { pdfDataBase64: nextPdfSource.dataBase64 } : {}),
       ...(nextPdfSource.dataBytes !== undefined ? { pdfDataBytes: nextPdfSource.dataBytes } : {}),
     });
+    await clearCompileFailedBanner(workspaceFolder);
     return;
   }
 
@@ -162,6 +199,25 @@ export async function openPdf(
         const text = error instanceof Error ? error.message : String(error);
         log(`Preview toolbar compile failed: ${text}`);
       });
+      return;
+    }
+    if (message.type === 'revealError' && message.payload && typeof message.payload === 'object') {
+      const payload = message.payload as { file?: unknown; line?: unknown };
+      const file = typeof payload.file === 'string' ? payload.file : undefined;
+      const line = typeof payload.line === 'number' ? payload.line : undefined;
+      if (file && line !== undefined) {
+        void vscode.commands.executeCommand(
+          'latexOneClick.revealTexLocation',
+          workspaceFolder,
+          file,
+          line,
+          0
+        );
+      }
+      return;
+    }
+    if (message.type === 'showErrors') {
+      void vscode.commands.executeCommand('workbench.view.extension.latexOneClick');
       return;
     }
     if (message.type === 'previewLoadProgress') {

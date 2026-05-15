@@ -22,6 +22,11 @@ import {
   sidebarToggleBoolCommand,
 } from './sidebar/projectTreeProvider';
 import { revealTexLocationCommand } from './sidebar/revealTexLocation';
+import {
+  copyCompileLogCommand,
+  jumpToFirstErrorCommand,
+  showCompileLogCommand,
+} from './sidebar/compileCommands';
 
 let statusBar: vscode.StatusBarItem | undefined;
 let trustedWorkspaceFeaturesInitialized = false;
@@ -52,6 +57,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       projectTreeProvider.refresh();
     }),
     vscode.commands.registerCommand('latexOneClick.revealTexLocation', revealTexLocationCommand),
+    vscode.commands.registerCommand('latexOneClick.jumpToFirstError', jumpToFirstErrorCommand),
+    vscode.commands.registerCommand('latexOneClick.showCompileLog', showCompileLogCommand),
+    vscode.commands.registerCommand('latexOneClick.copyCompileLog', copyCompileLogCommand),
     vscode.commands.registerCommand('latexOneClick.sidebarToggleBool', sidebarToggleBoolCommand),
     vscode.commands.registerCommand('latexOneClick.sidebarEditOutputDirectory', sidebarEditOutputDirectoryCommand),
     vscode.commands.registerCommand('latexOneClick.doctor', () => doctorCommand(storagePath)),

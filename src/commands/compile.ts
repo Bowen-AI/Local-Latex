@@ -6,9 +6,9 @@ import { resolveMainFile } from '../core/mainFileResolver';
 import { compile, resolveOutputDirectory } from '../core/compiler';
 import { validateWorkspaceOutputDirectory } from '../core/workspaceSafety';
 import { applyDiagnostics } from '../core/diagnostics';
-import { log } from '../core/outputChannel';
+import { log, show as showOutputChannel } from '../core/outputChannel';
 import { setState } from '../core/stateStore';
-import { openPdf } from '../preview/pdfPreview';
+import { openPdf, postCompileFailedToPreview } from '../preview/pdfPreview';
 import { RuntimeManager } from '../runtime/runtimeManager';
 import { nodeFileSystemOps } from '../core/nodeFileSystem';
 import { captureCompileSnapshot } from '../sidebar/compileSidebarState';
@@ -145,13 +145,19 @@ export async function compileCommand(
           }
         }
 
-        applyDiagnostics(result.logs, root);
-        captureCompileSnapshot(root, result);
+        applyDiagnostics(result.logs, { workspaceRoot: root, mainFile });
+        captureCompileSnapshot(root, { result, mainFile });
 
         if (result.timedOut) {
           statusBar.text = '$(error) Compile timed out';
           setState(root, { status: 'error', lastError: 'Timed out' });
-          await vscode.window.showErrorMessage('LaTeX One-Click: Compile timed out.');
+          await postCompileFailedToPreview(root, {
+            summary: `Compile timed out after ${settings.compileTimeoutSec}s`,
+            errors: result.logs.filter((entry) => entry.severity === 'error').slice(0, 5),
+          });
+          await notifyCompileFailure(
+            `Compile timed out after ${settings.compileTimeoutSec}s. Try increasing latexOneClick.compileTimeoutSec.`
+          );
           return;
         }
 
@@ -169,16 +175,32 @@ export async function compileCommand(
               ...(settings.previewAutoOpen ? {} : { refreshExistingOnly: true }),
             });
           }
-        } else {
-          statusBar.text = '$(error) Compile failed';
-          setState(root, { status: 'error', lastError: result.stderr });
-          const errors = result.logs.filter((e) => e.severity === 'error');
-          const msg = errors[0]?.message ?? (result.stderr.trim() || 'Unknown error');
-          const packageHint = sawFetchFailure
-            ? ' Tectonic was fetching missing TeX packages; check network access or enable Offline only for fast cached-only compiles.'
-            : '';
-          await vscode.window.showErrorMessage(`LaTeX One-Click: Compile failed: ${msg}${packageHint}`);
+          return;
         }
+
+        statusBar.text = '$(error) Compile failed';
+        setState(root, { status: 'error', lastError: result.stderr });
+
+        const errors = result.logs.filter((entry) => entry.severity === 'error');
+        const primary = errors[0]?.message ?? (result.stderr.trim().split('\n').pop() || 'Unknown error');
+
+        let baseMessage: string;
+        if (result.pdfMissing) {
+          baseMessage = `No PDF was produced. ${primary}`;
+        } else if (sawFetchFailure) {
+          baseMessage = `${primary} Tectonic was fetching missing TeX packages; check network access or enable Offline only for cached-only compiles.`;
+        } else {
+          baseMessage = primary;
+        }
+
+        await postCompileFailedToPreview(root, {
+          summary: result.pdfMissing
+            ? 'Compile finished but no PDF was produced'
+            : 'Compile failed',
+          errors: errors.slice(0, 5),
+        });
+
+        await notifyCompileFailure(baseMessage);
       }
     );
   } catch (error) {
@@ -186,6 +208,21 @@ export async function compileCommand(
     statusBar.text = '$(error) Compile failed';
     setState(root, { status: 'error', lastError: message });
     log(`Compile failed: ${message}`);
-    await vscode.window.showErrorMessage(`LaTeX One-Click: Compile failed: ${message}`);
+    await notifyCompileFailure(message);
+  }
+}
+
+async function notifyCompileFailure(message: string): Promise<void> {
+  const trimmed = message.length > 240 ? `${message.slice(0, 237)}…` : message;
+  const choice = await vscode.window.showErrorMessage(
+    `LaTeX One-Click: ${trimmed}`,
+    'Show Errors',
+    'Show Log'
+  );
+  if (choice === 'Show Errors') {
+    await vscode.commands.executeCommand('workbench.view.extension.latexOneClick');
+    await vscode.commands.executeCommand('latexOneClickCompile.focus').then(undefined, () => undefined);
+  } else if (choice === 'Show Log') {
+    showOutputChannel();
   }
 }
