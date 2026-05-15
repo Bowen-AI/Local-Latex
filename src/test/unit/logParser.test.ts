@@ -8,6 +8,7 @@ describe('logParser', () => {
     expect(entries.length).toBeGreaterThan(0);
     expect(entries[0].severity).toBe('error');
     expect(entries[0].message).toContain('LaTeX Error');
+    expect(entries[0].line).toBe(5);
   });
 
   it('parses a LaTeX warning', () => {
@@ -63,11 +64,80 @@ describe('logParser', () => {
     const log = `error: halted on potentially-recoverable error as specified\ncaused by: sections/intro.tex:15: Undefined control sequence.`;
     const entries = parseLog(log, 'main.tex');
 
-    expect(entries[0]).toMatchObject({
+    const causedBy = entries.find((entry) => entry.file === 'sections/intro.tex');
+    expect(causedBy).toMatchObject({
       file: 'sections/intro.tex',
       line: 15,
       severity: 'error',
       message: 'Undefined control sequence.',
     });
+  });
+
+  it('attributes errors to the most recently opened file via paren stack', () => {
+    const log = [
+      'This is pdfTeX',
+      '(./main.tex',
+      'LaTeX2e <2024-10-30>',
+      '(./article.cls',
+      'Document Class: article',
+      ')',
+      '(./chapters/intro.tex',
+      '! Undefined control sequence.',
+      'l.42 \\unknowncommand',
+      '))',
+    ].join('\n');
+
+    const entries = parseLog(log, 'main.tex');
+    expect(entries[0]).toMatchObject({
+      file: './chapters/intro.tex',
+      line: 42,
+      severity: 'error',
+    });
+  });
+
+  it('parses package errors with their package name', () => {
+    const log = `! Package amsmath Error: \\begin{align*} allowed only in paragraph mode.\nl.7 \\begin{align*}`;
+    const entries = parseLog(log, 'main.tex');
+    expect(entries[0]).toMatchObject({
+      severity: 'error',
+      line: 7,
+    });
+    expect(entries[0].message).toContain('Package amsmath');
+  });
+
+  it('parses package warnings with line numbers', () => {
+    const log = `Package hyperref Warning: Token not allowed in a PDF string (Unicode): on input line 23.`;
+    const entries = parseLog(log, 'main.tex');
+    expect(entries[0]).toMatchObject({
+      severity: 'warning',
+      line: 23,
+    });
+    expect(entries[0].message).toContain('Package hyperref');
+  });
+
+  it('dedupes identical entries', () => {
+    const log = [
+      '! Undefined control sequence.',
+      'l.5 \\foo',
+      '',
+      '! Undefined control sequence.',
+      'l.5 \\foo',
+    ].join('\n');
+    const entries = parseLog(log, 'main.tex');
+    expect(entries).toHaveLength(1);
+  });
+
+  it('does not push closed sibling files onto the stack', () => {
+    const log = [
+      '(./main.tex',
+      '(./a.sty)',
+      '(./b.sty)',
+      '! Undefined control sequence.',
+      'l.99 \\bad',
+      ')',
+    ].join('\n');
+    const entries = parseLog(log, 'main.tex');
+    expect(entries[0].file).toBe('./main.tex');
+    expect(entries[0].line).toBe(99);
   });
 });

@@ -195,6 +195,49 @@ export function buildPdfPreviewHtml(options: PdfPreviewHtmlOptions): string {
       animation: pulse 600ms ease-out forwards;
     }
 
+    .compileBanner {
+      position: sticky;
+      top: 38px;
+      z-index: 9;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--vscode-inputValidation-errorBorder, #be1100);
+      background: var(--vscode-inputValidation-errorBackground, rgba(190, 17, 0, 0.12));
+      color: var(--vscode-inputValidation-errorForeground, var(--text));
+      font-size: 12px;
+    }
+
+    .compileBanner.isHidden {
+      display: none;
+    }
+
+    .compileBannerTitle {
+      margin: 0 0 6px;
+      font-weight: 600;
+    }
+
+    .compileBannerList {
+      margin: 0;
+      padding-left: 18px;
+      max-height: 96px;
+      overflow: auto;
+    }
+
+    .compileBannerItem {
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: transparent;
+    }
+
+    .compileBannerItem:hover {
+      text-decoration-color: currentColor;
+    }
+
+    .compileBannerHint {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-style: italic;
+    }
+
     @keyframes pulse {
       from {
         opacity: 1;
@@ -218,6 +261,11 @@ export function buildPdfPreviewHtml(options: PdfPreviewHtmlOptions): string {
     </div>
     <div class="title">${title}</div>
     <div id="status">Loading</div>
+  </div>
+  <div id="compileBanner" class="compileBanner isHidden" role="alert" aria-live="polite">
+    <p id="compileBannerTitle" class="compileBannerTitle"></p>
+    <ul id="compileBannerList" class="compileBannerList"></ul>
+    <p class="compileBannerHint">The PDF below may be from a previous successful compile.</p>
   </div>
   <iframe id="quickPdf" src="${escapeHtml(options.pdfUri)}" title="${title}"></iframe>
   <main id="viewer" class="isHidden"></main>
@@ -304,9 +352,23 @@ export function buildPdfPreviewHtml(options: PdfPreviewHtmlOptions): string {
       { passive: false }
     );
 
+    const compileBanner = document.getElementById('compileBanner');
+    const compileBannerTitle = document.getElementById('compileBannerTitle');
+    const compileBannerList = document.getElementById('compileBannerList');
+
     window.addEventListener('message', (event) => {
       if (event.data?.type === 'reverseSearchStatus') {
         status.textContent = event.data.message;
+        return;
+      }
+
+      if (event.data?.type === 'compileFailed') {
+        renderCompileBanner(event.data.payload);
+        return;
+      }
+
+      if (event.data?.type === 'compileFailedClear') {
+        hideCompileBanner();
         return;
       }
 
@@ -756,6 +818,49 @@ export function buildPdfPreviewHtml(options: PdfPreviewHtmlOptions): string {
       marker.style.top = \`\${y}px\`;
       pageElement.append(marker);
       window.setTimeout(() => marker.remove(), 650);
+    }
+
+    function renderCompileBanner(payload) {
+      if (!compileBanner || !compileBannerTitle || !compileBannerList) {
+        return;
+      }
+      const summary = typeof payload?.summary === 'string' ? payload.summary : 'Compile failed';
+      compileBannerTitle.textContent = summary;
+      compileBannerList.replaceChildren();
+      const errors = Array.isArray(payload?.errors) ? payload.errors : [];
+      if (errors.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = 'See the Errors & Warnings sidebar for details.';
+        compileBannerList.append(li);
+      } else {
+        for (const err of errors) {
+          const li = document.createElement('li');
+          li.className = 'compileBannerItem';
+          const file = typeof err?.file === 'string' ? err.file : '';
+          const line = typeof err?.line === 'number' && err.line > 0 ? err.line : undefined;
+          const message = typeof err?.message === 'string' ? err.message : '(unparsed error)';
+          const location = line !== undefined ? \`\${file}:\${line}\` : file;
+          li.textContent = location ? \`\${location} — \${message}\` : message;
+          li.addEventListener('click', () => {
+            if (!file || line === undefined) {
+              vscode.postMessage({ type: 'showErrors' });
+              return;
+            }
+            vscode.postMessage({
+              type: 'revealError',
+              payload: { file, line }
+            });
+          });
+          compileBannerList.append(li);
+        }
+      }
+      compileBanner.classList.remove('isHidden');
+    }
+
+    function hideCompileBanner() {
+      if (compileBanner) {
+        compileBanner.classList.add('isHidden');
+      }
     }
 
     function clampScale(value) {

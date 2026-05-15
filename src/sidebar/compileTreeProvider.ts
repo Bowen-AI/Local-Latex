@@ -9,7 +9,8 @@ type CompileGroupId = 'errors' | 'warnings' | 'log';
 
 export type CompileTreeElement =
   | { kind: 'hint'; text: string }
-  | { kind: 'summary'; text: string; success?: boolean; timedOut?: boolean; finishedAtMs?: number }
+  | { kind: 'summary'; text: string; success?: boolean; timedOut?: boolean; pdfMissing?: boolean; finishedAtMs?: number }
+  | { kind: 'action'; id: string; label: string; iconId: string; commandId: string; args?: unknown[]; description?: string }
   | { kind: 'group'; id: CompileGroupId; count?: number; hasSnapshot: boolean }
   | { kind: 'diag'; entry: LogEntry }
   | { kind: 'empty'; text: string }
@@ -42,11 +43,31 @@ export class CompileTreeProvider implements vscode.TreeDataProvider<CompileTreeE
     if (element.kind === 'summary') {
       const item = new vscode.TreeItem(element.text, vscode.TreeItemCollapsibleState.None);
       item.iconPath = new vscode.ThemeIcon(
-        element.timedOut ? 'watch' : element.success === undefined ? 'info' : element.success ? 'check' : 'error'
+        element.timedOut
+          ? 'watch'
+          : element.success === undefined
+          ? 'info'
+          : element.success
+          ? 'check'
+          : element.pdfMissing
+          ? 'warning'
+          : 'error'
       );
       if (element.finishedAtMs) {
         item.description = new Date(element.finishedAtMs).toLocaleTimeString();
       }
+      item.tooltip = element.text;
+      return item;
+    }
+    if (element.kind === 'action') {
+      const item = new vscode.TreeItem(element.label, vscode.TreeItemCollapsibleState.None);
+      item.iconPath = new vscode.ThemeIcon(element.iconId);
+      item.description = element.description;
+      item.command = {
+        command: element.commandId,
+        title: element.label,
+        arguments: element.args,
+      };
       return item;
     }
     if (element.kind === 'group') {
@@ -65,9 +86,11 @@ export class CompileTreeProvider implements vscode.TreeDataProvider<CompileTreeE
     if (element.kind === 'diag') {
       const { entry } = element;
       const item = new vscode.TreeItem(entry.message, vscode.TreeItemCollapsibleState.None);
-      item.tooltip = `${entry.file}:${entry.line}: ${entry.message}`;
+      const locationText = entry.line > 0 ? `${entry.file}:${entry.line}` : entry.file;
+      item.description = locationText;
+      item.tooltip = `${locationText}\n${entry.message}`;
       item.iconPath = new vscode.ThemeIcon(
-        entry.severity === 'error' ? 'close' : 'warning'
+        entry.severity === 'error' ? 'error' : entry.severity === 'warning' ? 'warning' : 'info'
       );
       const root = getWorkspaceRoot();
       if (root) {
@@ -109,18 +132,57 @@ export class CompileTreeProvider implements vscode.TreeDataProvider<CompileTreeE
     if (!element) {
       const errors = snap?.logs.filter((e) => e.severity === 'error') ?? [];
       const warnings = snap?.logs.filter((e) => e.severity === 'warning') ?? [];
-      return [
+      const items: CompileTreeElement[] = [
         {
           kind: 'summary',
           text: snap?.summary ?? 'No compile output yet. Run Compile.',
           success: snap?.success,
           timedOut: snap?.timedOut,
+          pdfMissing: snap?.pdfMissing,
           finishedAtMs: snap?.finishedAtMs,
         },
+        {
+          kind: 'action',
+          id: 'compile',
+          label: snap ? 'Recompile' : 'Compile',
+          iconId: 'play',
+          commandId: 'latexOneClick.compile',
+        },
+      ];
+
+      if (snap) {
+        if (errors.length > 0) {
+          items.push({
+            kind: 'action',
+            id: 'jumpFirstError',
+            label: 'Jump to first error',
+            iconId: 'arrow-right',
+            commandId: 'latexOneClick.jumpToFirstError',
+            description: errors[0]?.line ? `line ${errors[0].line}` : undefined,
+          });
+        }
+        items.push({
+          kind: 'action',
+          id: 'showLog',
+          label: 'Open full log',
+          iconId: 'output',
+          commandId: 'latexOneClick.showCompileLog',
+        });
+        items.push({
+          kind: 'action',
+          id: 'copyLog',
+          label: 'Copy log to clipboard',
+          iconId: 'clippy',
+          commandId: 'latexOneClick.copyCompileLog',
+        });
+      }
+
+      items.push(
         { kind: 'group', id: 'errors', count: errors.length, hasSnapshot: Boolean(snap) },
         { kind: 'group', id: 'warnings', count: warnings.length, hasSnapshot: Boolean(snap) },
-        { kind: 'group', id: 'log', hasSnapshot: Boolean(snap) },
-      ];
+        { kind: 'group', id: 'log', hasSnapshot: Boolean(snap) }
+      );
+      return items;
     }
 
     if (element.kind !== 'group') {
@@ -130,7 +192,13 @@ export class CompileTreeProvider implements vscode.TreeDataProvider<CompileTreeE
     if (element.id === 'errors') {
       const entries = snap?.logs.filter((e) => e.severity === 'error') ?? [];
       if (entries.length === 0) {
-        return [{ kind: 'empty', text: snap ? 'No errors' : 'No compile output yet.' }];
+        if (!snap) {
+          return [{ kind: 'empty', text: 'No compile output yet.' }];
+        }
+        if (snap.success) {
+          return [{ kind: 'empty', text: 'No errors. Build succeeded.' }];
+        }
+        return [{ kind: 'empty', text: 'No errors parsed — check Compile output below for raw details.' }];
       }
       return entries.map((e) => ({ kind: 'diag', entry: e }));
     }
