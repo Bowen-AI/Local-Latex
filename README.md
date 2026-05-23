@@ -3,11 +3,19 @@
 [![CI](https://github.com/Bowen-AI/Local-Latex/actions/workflows/ci.yml/badge.svg)](https://github.com/Bowen-AI/Local-Latex/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/Bowen-AI/Local-Latex)](LICENSE)
 
-Compile LaTeX to PDF locally in Visual Studio Code without installing a full TeX distribution (MiKTeX, TeX Live, or MacTeX).
+Compile LaTeX to PDF locally in Visual Studio Code without installing MiKTeX, TeX Live, MacTeX, or another full TeX distribution.
 
-The extension uses the [Tectonic](https://tectonic-typesetting.github.io/) engine. On first compile it provisions a verified runtime; TeX packages are retrieved on demand for your document, rather than through a multi‑gigabyte distribution installer. Builds run on your machine. The integrated PDF preview supports SyncTeX reverse search: selecting a position in the preview opens the corresponding `.tex` file and line in the editor. Diagnostics appear in the Problems panel.
+LaTeX One-Click is the setup-free LaTeX compile loop for VS Code: install the add-on, open a `.tex` project, run compile, and get a PDF. It uses the [Tectonic](https://tectonic-typesetting.github.io/) engine and provisions a verified runtime on first compile; packages are retrieved on demand for your document rather than through a multi-gigabyte distribution installer. Builds run on your machine.
+
+The killer workflow is editing from the PDF: click rendered text in the integrated preview and SyncTeX reverse search opens the matching `.tex` source line so you can revise the exact code that produced it. Diagnostics appear in the Problems panel.
+
+**Install:** [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=BowenAI.latex-one-click) · [Open VSX](https://open-vsx.org/extension/BowenAI/latex-one-click) · [Project page](https://bowen-ai.github.io/Local-Latex/)
 
 **Repository:** [github.com/Bowen-AI/Local-Latex](https://github.com/Bowen-AI/Local-Latex) (open source). Issues and contributions are welcome.
+
+![Real VS Code screenshot of LaTeX One-Click with source and PDF preview side by side](resources/readme/workflow-demo.png)
+
+Follow the workflow in order: install the add-on, run `LaTeX: Compile Document`, click text in the generated PDF, then edit the matching source line.
 
 ## Editing with AI-assisted tools
 
@@ -23,21 +31,21 @@ LaTeX One-Click fits workflows in VS Code, Cursor, and similar editors where you
 - Emit SyncTeX data (`.synctex.gz`) for PDF-to-source navigation when enabled.
 - Write build artifacts to a configurable workspace-local output directory.
 
-## Interface overview
+## Workflow Screenshots
 
-Schematic illustrations (appearance depends on your editor theme). Raster **PNG** images are used here because the Visual Studio Marketplace does not allow **SVG** in extension READMEs; vector sources live under `website/assets/`.
+These marketplace images are captured from the extension running in a clean VS Code profile with `npm run assets:capture`; they are real UI frames, not mockups. `npm run assets:marketplace` only regenerates the package icon.
 
-**Command Palette — LaTeX commands**
+**Run compile from VS Code — no TeX distribution setup**
 
 ![LaTeX commands in the Command Palette](resources/readme/gui-command-palette.png)
 
-**Editor — PDF preview beside source**
+**Open the generated PDF beside the source**
 
 ![PDF preview beside the editor](resources/readme/gui-pdf-preview.png)
 
-**Status bar — compile control**
+**Click PDF output — jump back to the matching source line**
 
-![Compile control in the status bar](resources/readme/gui-status-bar.png)
+![PDF preview beside the selected LaTeX source line](resources/readme/gui-status-bar.png)
 
 ## PDF preview and SyncTeX
 

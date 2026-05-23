@@ -10,6 +10,8 @@ npm run lint
 npm run typecheck
 npm test
 npm run compile
+npm run assets:capture
+npm run assets:marketplace
 npm run smoke
 LATEX_ONE_CLICK_REQUIRE_EXTENSION_HOST=1 npm run test:extension
 npm run package:check
@@ -17,7 +19,7 @@ npm run package
 npx vsce ls --no-dependencies
 ```
 
-`npm run package:check` validates the `npx vsce ls --no-dependencies` output against the GA package allowlist/blocklist and checks release-critical package metadata. The VSIX should include `package.json`, `README.md`, `LICENSE`, `CHANGELOG.md`, compiled JavaScript under `out/`, `resources/runtime-manifest.json`, and `media/pdfjs/`. It should not include generated demo PDFs, generated SyncTeX files, sample projects, the website source, repository docs, source TypeScript, tests, CI files, local VSIX files, or declaration files. The same gate also fails if the runtime manifest has unsupported platform drift, placeholder checksums, wrong binary names, URLs that do not match the bundled runtime version, missing mixed-case TeX workspace activation, or exposed settings for features that are not implemented.
+`npm run assets:capture` launches VS Code, opens `examples/demo-paper`, and captures genuine marketplace/project-page screenshots from the running extension. `npm run assets:marketplace` regenerates only non-screenshot marketplace artwork such as the package icon. `npm run package:check` validates the `npx vsce ls --no-dependencies` output against the GA package allowlist/blocklist and checks release-critical package metadata. The VSIX should include `package.json`, `README.md`, `LICENSE`, `CHANGELOG.md`, compiled JavaScript under `out/`, `resources/runtime-manifest.json`, the marketplace README screenshots under `resources/readme/`, the marketplace icon, and `media/pdfjs/`. It should not include generated demo PDFs, generated SyncTeX files, sample projects, the website source, repository docs, source TypeScript, tests, CI files, local VSIX files, animated mock walkthrough GIFs, or declaration files. The same gate also fails if the runtime manifest has unsupported platform drift, placeholder checksums, wrong binary names, URLs that do not match the bundled runtime version, missing mixed-case TeX workspace activation, or exposed settings for features that are not implemented.
 
 The same package gate also checks the marketplace README for the GA privacy disclosure: no telemetry, first-use runtime download from GitHub Releases, possible Tectonic package downloads during compilation, and the `latexOneClick.offlineOnly` opt-out for package fetching.
 
@@ -40,6 +42,7 @@ External release blockers:
 - `VSCE_PAT` must be set for Visual Studio Marketplace publishing.
 - `OVSX_PAT` must be set for Open VSX publishing.
 - The configured `publisher` in `package.json` must exist in each target marketplace account before publishing.
+- Commit and push regenerated marketplace assets before publishing. `vsce` rewrites relative README image links to GitHub raw URLs, so the Marketplace listing needs the PNG files to exist on the published branch as well as inside the VSIX.
 
 ## Step-by-step production plan
 

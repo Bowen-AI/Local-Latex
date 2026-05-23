@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-05-22
+
+### Changed
+
+- Refresh the GitHub Pages project page, marketplace README demo section, and marketplace package metadata.
+- Replace the old schematic screenshots with genuine VS Code captures showing the command palette, PDF preview, and click-to-source editing loop.
+- Add a dedicated marketplace icon and package-content checks for the published README image assets.
+
 ### Fixed
 
 - Reject unsupported Linux arm64 and Windows arm64 platforms instead of falling back to x64 runtime downloads.
